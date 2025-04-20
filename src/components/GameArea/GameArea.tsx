@@ -1,17 +1,13 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store";
-import {
-  createBorderSides,
-  getTotalPerimeter,
-} from "../../utils/borderUtils/borderSides";
+import { createBorderSides } from "../../utils/borderUtils/borderSides";
 import { calculatePlayerBorderSegments } from "../../utils/borderUtils/calculatePlayerBorderSegments";
 import {
   calculatePlayerNamePositions,
   GameDimensions,
 } from "../../utils/positionUtils/calculatePlayerNamePositions";
 import PlayerNameBox from "../PlayerNameBox/PlayerNameBox";
-import gsap from "gsap";
 
 interface GameAreaProps {
   width?: number;
@@ -48,6 +44,46 @@ const GameArea: React.FC<GameAreaProps> = ({ width = 900, height = 600 }) => {
     0,
   );
 
+  /**
+   * Draws player border segments on canvas
+   */
+  const drawPlayerBorders = (ctx: CanvasRenderingContext2D) => {
+    // Draw for each player
+    playerBorderSegments.forEach((playerSegment) => {
+      const { segments, playerColor } = playerSegment;
+
+      ctx.strokeStyle = playerColor;
+      ctx.lineWidth = 15; // Border thickness
+
+      segments.forEach((segment) => {
+        const { side, startPosition, length } = segment;
+        ctx.beginPath();
+
+        // Draw according to which side the segment is on
+        switch (side.name) {
+          case "top":
+            ctx.moveTo(startPosition, 0);
+            ctx.lineTo(startPosition + length, 0);
+            break;
+          case "right":
+            ctx.moveTo(width, startPosition);
+            ctx.lineTo(width, startPosition + length);
+            break;
+          case "bottom":
+            ctx.moveTo(width - startPosition, height);
+            ctx.lineTo(width - (startPosition + length), height);
+            break;
+          case "left":
+            ctx.moveTo(0, height - startPosition);
+            ctx.lineTo(0, height - (startPosition + length));
+            break;
+        }
+
+        ctx.stroke();
+      });
+    });
+  };
+
   // Setup canvas context
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -64,42 +100,12 @@ const GameArea: React.FC<GameAreaProps> = ({ width = 900, height = 600 }) => {
     // Clear canvas
     ctx.clearRect(0, 0, width, height);
 
+    // Draw player border segments
+    drawPlayerBorders(ctx);
+
     // Canvas is now set up and ready for drawing
     // Future tasks will include drawing the bouncing logo
-  }, [width, height]);
-
-  // Setup GSAP animation for border rotation
-  // useEffect(() => {
-  //   // GSAP animation for continuous rotation
-  //   if (players.length > 0) {
-  //     const rotationDuration = 5; // seconds for a full rotation
-
-  //     // Clear any existing animations
-  //     gsap.killTweensOf({});
-
-  //     // Create GSAP timeline for continuous rotation
-  //     const tl = gsap.timeline({ repeat: 0 });
-
-  //     tl.to(
-  //       {},
-  //       {
-  //         duration: rotationDuration,
-  //         ease: "linear",
-  //         // onUpdate: function () {
-  //         //   // Calculate current rotation offset based on timeline progress
-  //         //   const progress = tl.progress();
-  //         //   // const newOffset = progress * perimeter;
-  //         //   // setRotationOffset(newOffset);
-  //         // },
-  //       },
-  //     );
-
-  //     return () => {
-  //       // Cleanup animation when component unmounts
-  //       tl.kill();
-  //     };
-  //   }
-  // }, [players.length, perimeter]);
+  }, [width, height, players, playerBorderSegments, drawPlayerBorders]);
 
   return (
     <div
