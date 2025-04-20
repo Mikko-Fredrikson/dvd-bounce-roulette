@@ -1,4 +1,4 @@
-import { BorderSegment, BorderSide, PlayerBorderSegments } from "./types";
+import { BorderSide, PlayerBorderSegments } from "./types";
 import { calculateBorderLength } from "./calculateBorderLength";
 import { calculateBorderSegments } from "./calculateBorderSegments";
 import { Player } from "../../store/slices/playerSlice/types";

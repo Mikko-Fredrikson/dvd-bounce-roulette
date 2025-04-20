@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store";
 import { createBorderSides } from "../../utils/borderUtils/borderSides";
@@ -47,42 +47,45 @@ const GameArea: React.FC<GameAreaProps> = ({ width = 900, height = 600 }) => {
   /**
    * Draws player border segments on canvas
    */
-  const drawPlayerBorders = (ctx: CanvasRenderingContext2D) => {
-    // Draw for each player
-    playerBorderSegments.forEach((playerSegment) => {
-      const { segments, playerColor } = playerSegment;
+  const drawPlayerBorders = React.useCallback(
+    (ctx: CanvasRenderingContext2D) => {
+      // Draw for each player
+      playerBorderSegments.forEach((playerSegment) => {
+        const { segments, playerColor } = playerSegment;
 
-      ctx.strokeStyle = playerColor;
-      ctx.lineWidth = 15; // Border thickness
+        ctx.strokeStyle = playerColor;
+        ctx.lineWidth = 15; // Border thickness
 
-      segments.forEach((segment) => {
-        const { side, startPosition, length } = segment;
-        ctx.beginPath();
+        segments.forEach((segment) => {
+          const { side, startPosition, length } = segment;
+          ctx.beginPath();
 
-        // Draw according to which side the segment is on
-        switch (side.name) {
-          case "top":
-            ctx.moveTo(startPosition, 0);
-            ctx.lineTo(startPosition + length, 0);
-            break;
-          case "right":
-            ctx.moveTo(width, startPosition);
-            ctx.lineTo(width, startPosition + length);
-            break;
-          case "bottom":
-            ctx.moveTo(width - startPosition, height);
-            ctx.lineTo(width - (startPosition + length), height);
-            break;
-          case "left":
-            ctx.moveTo(0, height - startPosition);
-            ctx.lineTo(0, height - (startPosition + length));
-            break;
-        }
+          // Draw according to which side the segment is on
+          switch (side.name) {
+            case "top":
+              ctx.moveTo(startPosition, 0);
+              ctx.lineTo(startPosition + length, 0);
+              break;
+            case "right":
+              ctx.moveTo(width, startPosition);
+              ctx.lineTo(width, startPosition + length);
+              break;
+            case "bottom":
+              ctx.moveTo(width - startPosition, height);
+              ctx.lineTo(width - (startPosition + length), height);
+              break;
+            case "left":
+              ctx.moveTo(0, height - startPosition);
+              ctx.lineTo(0, height - (startPosition + length));
+              break;
+          }
 
-        ctx.stroke();
+          ctx.stroke();
+        });
       });
-    });
-  };
+    },
+    [playerBorderSegments, width, height],
+  );
 
   // Setup canvas context
   useEffect(() => {
