@@ -9,7 +9,7 @@ The game is described in the `game-document.md` file
 
 - **Important** Always develop every feature one task at a time
 - **Important** Write unit tests for all components and utilities before implementing the feature.
-
+- Use pnpm run test to run test. You can still define specifc file.
 - Follow React best practices with TypeScript
 - Use Redux Toolkit for state management
 - Implement GSAP for animations

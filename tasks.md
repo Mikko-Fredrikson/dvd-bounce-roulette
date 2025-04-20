@@ -35,14 +35,14 @@
 - [x] Create a truct to store and refer the different lengths and properties of the gameArea's sides.
 - [x] Calculate if a player's border segment is too long for the side it is on depending on starting location and side length.
 - [x] Calculate the border segments a player needs in total based on length and start pos.
-- A loop for drawing player's corner
-- [ ] Draw player's section along the edge clockwise
-- [ ] Start a new section for the same player starting from the corner the previous one ended.
-- [ ] Start drawing border for next player where the previous player's border ended.
+- [x] Calculate the segments for each player. The total segment length for each player at the start is calculateBorderLength, and next player's border segments begin next pixel after previous player's last border segment ends.
+  - [x] The segments should be assigned to specific named players, so that we can refer to correct player colour and assign health loss to a player
 
 ### Game Area
 
 - [ ] Fit canvas into game area.
+- [ ] Start drawing border for next player where the previous player's border ended.
+  - Remember the player's assigned color on each of their border segments.
 
 ## Project Setup
 

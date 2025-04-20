@@ -3,7 +3,6 @@ import { BorderSide, BorderSegment } from "./types";
 /**
  * Calculates all border segments needed for a player based on their starting position and total border length
  *
- * @param sides - Array of BorderSide objects representing the game area
  * @param startingSide - The side where the player's border starts
  * @param startPosition - The position along the starting side where the player's border begins (in pixels)
  * @param totalLength - The total length of the player's border (in pixels)

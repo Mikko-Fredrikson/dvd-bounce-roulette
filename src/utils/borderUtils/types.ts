@@ -39,3 +39,20 @@ export interface BorderSegment {
   /** Length of this segment (in pixels) */
   length: number;
 }
+
+/**
+ * Represents all border segments belonging to a specific player
+ */
+export interface PlayerBorderSegments {
+  /** ID of the player that owns these segments */
+  playerId: string;
+
+  /** Name of the player that owns these segments */
+  playerName: string;
+
+  /** Color assigned to this player */
+  playerColor: string;
+
+  /** All border segments belonging to this player */
+  segments: BorderSegment[];
+}
