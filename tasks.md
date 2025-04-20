@@ -41,13 +41,14 @@
 ### Game Area
 
 - [x] Fit canvas into game area.
-- [ ] Start drawing border for next player where the previous player's border ended.
+- [x] Start drawing border for next player where the previous player's border ended.
   - Remember the player's assigned color on each of their border segments.
-- [ ] Add player name boxes next to border segments.
+- [x] Add player name boxes next to border segments.
   - [x] Create component for player name display (Low)
   - [x] Calculate mid-point of each player's primary segment (Medium)
   - [x] Position name boxes outside the game area next to players' border segments (Medium)
-  - [x] Animate name boxes to rotate with border segments (Medium)
+  - [ ] Animate name boxes to rotate with border segments (Medium)
+- [x] Transform border segments counterclockwise along the game area border.
 
 ## Project Setup
 

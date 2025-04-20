@@ -2,17 +2,20 @@ import { BorderSide, PlayerBorderSegments } from "./types";
 import { calculateBorderLength } from "./calculateBorderLength";
 import { calculateBorderSegments } from "./calculateBorderSegments";
 import { Player } from "../../store/slices/playerSlice/types";
+import { getTotalPerimeter } from "./borderSides";
 
 /**
  * Calculates border segments for all players in the game and assigns them to specific players
  *
  * @param sides - Array of BorderSide objects representing the game area
  * @param players - Array of Player objects to assign segments to
+ * @param startOffset - Optional number of pixels to offset the starting position counterclockwise (default: 0)
  * @returns Array of PlayerBorderSegments with segments assigned to each player
  */
 export function calculatePlayerBorderSegments(
   sides: BorderSide[],
   players: Player[],
+  startOffset: number = 0,
 ): PlayerBorderSegments[] {
   // If there are no players, return an empty array
   if (players.length === 0 || sides.length === 0) {
@@ -30,9 +33,30 @@ export function calculatePlayerBorderSegments(
   // Array to store each player's segments with their information
   const playerBorderSegments: PlayerBorderSegments[] = [];
 
-  // Start with the first side
-  let currentSide = sides[0];
+  // Apply the start offset to determine the initial position and side
+  let currentSide = sides[0]; // Start with the top side by default
   let currentPosition = 0;
+
+  if (startOffset > 0) {
+    const totalPerimeter = getTotalPerimeter(sides);
+    // Normalize the offset to be within a single perimeter
+    const normalizedOffset = startOffset % totalPerimeter;
+
+    // Find the correct side and position based on the offset
+    let remainingOffset = normalizedOffset;
+
+    for (const side of sides) {
+      if (remainingOffset < side.length) {
+        // Found the side where the offset lands
+        currentSide = side;
+        currentPosition = remainingOffset;
+        break;
+      }
+
+      // Offset extends beyond this side, subtract this side's length and continue
+      remainingOffset -= side.length;
+    }
+  }
 
   // For each player, calculate their segments
   for (let i = 0; i < players.length; i++) {

@@ -4,15 +4,12 @@ import GameArea from "../GameArea";
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import playerReducer from "../../../store/slices/playerSlice/playerSlice";
-import * as borderSegmentUtils from "../../../utils/borderUtils/calculatePlayerBorderSegments";
-import * as borderSidesUtils from "../../../utils/borderUtils/borderSides";
-import * as positionUtils from "../../../utils/positionUtils/calculatePlayerNamePositions";
 
 // Mock animation frame
-global.requestAnimationFrame = vi.fn((callback) => {
+globalThis.requestAnimationFrame = vi.fn((callback) => {
   return setTimeout(() => callback(Date.now()), 0);
 });
-global.cancelAnimationFrame = vi.fn((id) => {
+globalThis.cancelAnimationFrame = vi.fn((id) => {
   clearTimeout(id);
 });
 
@@ -45,6 +42,88 @@ const renderWithStore = (component, players = []) => {
   return render(<Provider store={store}>{component}</Provider>);
 };
 
+// Mock the borderUtils methods
+vi.mock("../../../utils/borderUtils/borderSides", () => {
+  const mockTop = {
+    name: "top",
+    length: 900,
+    startPoint: { x: 0, y: 0 },
+    endPoint: { x: 900, y: 0 },
+    nextSide: null,
+  };
+
+  const mockRight = {
+    name: "right",
+    length: 600,
+    startPoint: { x: 900, y: 0 },
+    endPoint: { x: 900, y: 600 },
+    nextSide: null,
+  };
+
+  const mockBottom = {
+    name: "bottom",
+    length: 900,
+    startPoint: { x: 900, y: 600 },
+    endPoint: { x: 0, y: 600 },
+    nextSide: null,
+  };
+
+  const mockLeft = {
+    name: "left",
+    length: 600,
+    startPoint: { x: 0, y: 600 },
+    endPoint: { x: 0, y: 0 },
+    nextSide: null,
+  };
+
+  // Link the sides
+  mockTop.nextSide = mockRight;
+  mockRight.nextSide = mockBottom;
+  mockBottom.nextSide = mockLeft;
+  mockLeft.nextSide = mockTop;
+
+  const mockSides = [mockTop, mockRight, mockBottom, mockLeft];
+
+  return {
+    createBorderSides: vi.fn().mockReturnValue(mockSides),
+    getTotalPerimeter: vi.fn().mockReturnValue(3000), // 900 + 600 + 900 + 600
+    getSideByName: vi.fn((sides, name) =>
+      mockSides.find((side) => side.name === name),
+    ),
+    getPointOnSide: vi.fn(),
+  };
+});
+
+vi.mock("../../../utils/borderUtils/calculatePlayerBorderSegments", () => ({
+  calculatePlayerBorderSegments: vi
+    .fn()
+    .mockImplementation((sides, players, offset = 0) => {
+      return players.map((player) => ({
+        playerId: player.id,
+        playerName: player.name,
+        playerColor: player.color,
+        segments: [
+          {
+            side: sides[0],
+            startPosition: offset % 900,
+            length: 300,
+          },
+        ],
+      }));
+    }),
+}));
+
+vi.mock("../../../utils/positionUtils/calculatePlayerNamePositions", () => ({
+  calculatePlayerNamePositions: vi.fn().mockImplementation((playerSegments) => {
+    return playerSegments.map((segment) => ({
+      playerId: segment.playerId,
+      playerName: segment.playerName,
+      playerColor: segment.playerColor,
+      position: { x: 100, y: -30 },
+    }));
+  }),
+}));
+
 describe("GameArea", () => {
   const mockPlayers = [
     {
@@ -53,8 +132,6 @@ describe("GameArea", () => {
       color: "#FF0000",
       health: 100,
       isAlive: true,
-      borderStart: 0,
-      borderLength: 500,
     },
     {
       id: "2",
@@ -62,69 +139,15 @@ describe("GameArea", () => {
       color: "#00FF00",
       health: 100,
       isAlive: true,
-      borderStart: 500,
-      borderLength: 500,
     },
   ];
 
   const mockWidth = 900;
   const mockHeight = 600;
 
-  const mockSides = {
-    top: mockWidth,
-    right: mockHeight,
-    bottom: mockWidth,
-    left: mockHeight,
-  };
-
-  const mockPlayerBorderSegments = [
-    {
-      playerId: "1",
-      playerName: "Player 1",
-      playerColor: "#FF0000",
-      segments: [{ side: "top", start: 0, length: 500 }],
-    },
-    {
-      playerId: "2",
-      playerName: "Player 2",
-      playerColor: "#00FF00",
-      segments: [
-        { side: "top", start: 500, length: 400 },
-        { side: "right", start: 0, length: 100 },
-      ],
-    },
-  ];
-
-  const mockPlayerNamePositions = [
-    {
-      playerId: "1",
-      playerName: "Player 1",
-      playerColor: "#FF0000",
-      position: { x: 250, y: -30 },
-    },
-    {
-      playerId: "2",
-      playerName: "Player 2",
-      playerColor: "#00FF00",
-      position: { x: 700, y: -30 },
-    },
-  ];
-
   beforeEach(() => {
     vi.clearAllMocks();
-
-    // Mock canvas getContext
     HTMLCanvasElement.prototype.getContext = vi.fn(() => mockCanvasContext);
-
-    // Set up direct mocks for the utility functions
-    vi.spyOn(borderSidesUtils, "createBorderSides").mockReturnValue(mockSides);
-    vi.spyOn(
-      borderSegmentUtils,
-      "calculatePlayerBorderSegments",
-    ).mockReturnValue(mockPlayerBorderSegments);
-    vi.spyOn(positionUtils, "calculatePlayerNamePositions").mockReturnValue(
-      mockPlayerNamePositions,
-    );
   });
 
   it("renders game area with correct aspect ratio", () => {
@@ -218,5 +241,20 @@ describe("GameArea", () => {
     expect(canvas.className).toContain("absolute");
     expect(canvas.className).toContain("top-0");
     expect(canvas.className).toContain("left-0");
+  });
+
+  it("sets up animation with requestAnimationFrame", () => {
+    // Mock requestAnimationFrame
+    const mockRequestAnimationFrame = vi.fn().mockReturnValue(123);
+    global.requestAnimationFrame = mockRequestAnimationFrame;
+    global.cancelAnimationFrame = vi.fn();
+
+    renderWithStore(<GameArea animationSpeed={5} />, mockPlayers);
+
+    // Verify that requestAnimationFrame was called at least once to set up animation
+    expect(mockRequestAnimationFrame).toHaveBeenCalled();
+
+    // Cleanup
+    vi.restoreAllMocks();
   });
 });

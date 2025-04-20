@@ -1,7 +1,10 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store";
-import { createBorderSides } from "../../utils/borderUtils/borderSides";
+import {
+  createBorderSides,
+  getTotalPerimeter,
+} from "../../utils/borderUtils/borderSides";
 import { calculatePlayerBorderSegments } from "../../utils/borderUtils/calculatePlayerBorderSegments";
 import {
   calculatePlayerNamePositions,
@@ -12,13 +15,18 @@ import PlayerNameBox from "../PlayerNameBox/PlayerNameBox";
 interface GameAreaProps {
   width?: number;
   height?: number;
+  animationSpeed?: number;
 }
 
 /**
  * GameArea component that maintains a fixed 3:2 aspect ratio regardless of window size
  * Displays player borders and name boxes that rotate counter-clockwise
  */
-const GameArea: React.FC<GameAreaProps> = ({ width = 900, height = 600 }) => {
+const GameArea: React.FC<GameAreaProps> = ({
+  width = 900,
+  height = 600,
+  animationSpeed = 1, // pixels per frame
+}) => {
   // Fixed aspect ratio of 3:2 (width:height)
   const aspectRatio = width / height;
 
@@ -26,15 +34,20 @@ const GameArea: React.FC<GameAreaProps> = ({ width = 900, height = 600 }) => {
   const players = useSelector((state: RootState) => state.players.players);
 
   // Animation state
-  // const [rotationOffset, setRotationOffset] = useState(0);
+  const [offset, setOffset] = useState(0);
+  const animationRef = useRef<number | null>(null);
   const gameAreaRef = useRef<HTMLDivElement>(null);
   const nameBoxContainerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Calculate border segments for all players
   const sides = createBorderSides(width, height);
-  // const perimeter = getTotalPerimeter(sides);
-  const playerBorderSegments = calculatePlayerBorderSegments(sides, players);
+  const perimeter = getTotalPerimeter(sides);
+  const playerBorderSegments = calculatePlayerBorderSegments(
+    sides,
+    players,
+    offset,
+  );
 
   // Calculate player name positions based on current rotation offset
   const gameDimensions: GameDimensions = { width, height };
@@ -49,6 +62,9 @@ const GameArea: React.FC<GameAreaProps> = ({ width = 900, height = 600 }) => {
    */
   const drawPlayerBorders = React.useCallback(
     (ctx: CanvasRenderingContext2D) => {
+      // Clear the entire canvas before drawing
+      ctx.clearRect(0, 0, width, height);
+
       // Draw for each player
       playerBorderSegments.forEach((playerSegment) => {
         const { segments, playerColor } = playerSegment;
@@ -87,7 +103,13 @@ const GameArea: React.FC<GameAreaProps> = ({ width = 900, height = 600 }) => {
     [playerBorderSegments, width, height],
   );
 
-  // Setup canvas context
+  // Animation loop to continuously update the offset
+  const animateOffset = React.useCallback(() => {
+    setOffset((prevOffset) => (prevOffset + animationSpeed) % perimeter);
+    animationRef.current = requestAnimationFrame(animateOffset);
+  }, [animationSpeed, perimeter]);
+
+  // Setup canvas context and start animation
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -100,15 +122,28 @@ const GameArea: React.FC<GameAreaProps> = ({ width = 900, height = 600 }) => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Clear canvas
-    ctx.clearRect(0, 0, width, height);
+    // Start animation loop
+    animationRef.current = requestAnimationFrame(animateOffset);
 
-    // Draw player border segments
+    // Cleanup animation loop on unmount
+    return () => {
+      if (animationRef.current !== null) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [width, height, animateOffset]);
+
+  // Update canvas when player border segments change
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // Draw player border segments with the current offset
     drawPlayerBorders(ctx);
-
-    // Canvas is now set up and ready for drawing
-    // Future tasks will include drawing the bouncing logo
-  }, [width, height, players, playerBorderSegments, drawPlayerBorders]);
+  }, [playerBorderSegments, drawPlayerBorders]);
 
   return (
     <div
