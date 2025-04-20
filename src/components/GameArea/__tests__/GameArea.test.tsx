@@ -97,4 +97,24 @@ describe("GameArea", () => {
     expect(screen.getByText("Player 1")).toBeInTheDocument();
     expect(screen.getByText("Player 2")).toBeInTheDocument();
   });
+
+  it("renders canvas element with correct dimensions", () => {
+    const width = 900;
+    const height = 600;
+
+    renderWithStore(<GameArea width={width} height={height} />);
+
+    // Check that the canvas element exists
+    const canvas = screen.getByTestId("game-canvas");
+    expect(canvas).toBeInTheDocument();
+
+    // Check that the canvas has the correct dimensions
+    expect(canvas).toHaveAttribute("width", width.toString());
+    expect(canvas).toHaveAttribute("height", height.toString());
+
+    // Check that the canvas fills the game area
+    expect(canvas.className).toContain("absolute");
+    expect(canvas.className).toContain("top-0");
+    expect(canvas.className).toContain("left-0");
+  });
 });

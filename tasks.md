@@ -40,7 +40,7 @@
 
 ### Game Area
 
-- [ ] Fit canvas into game area.
+- [x] Fit canvas into game area.
 - [ ] Start drawing border for next player where the previous player's border ended.
   - Remember the player's assigned color on each of their border segments.
 - [ ] Add player name boxes next to border segments.

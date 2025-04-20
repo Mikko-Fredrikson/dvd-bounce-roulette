@@ -30,13 +30,14 @@ const GameArea: React.FC<GameAreaProps> = ({ width = 900, height = 600 }) => {
   const players = useSelector((state: RootState) => state.players.players);
 
   // Animation state
-  const [rotationOffset, setRotationOffset] = useState(0);
+  // const [rotationOffset, setRotationOffset] = useState(0);
   const gameAreaRef = useRef<HTMLDivElement>(null);
   const nameBoxContainerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Calculate border segments for all players
   const sides = createBorderSides(width, height);
-  const perimeter = getTotalPerimeter(sides);
+  // const perimeter = getTotalPerimeter(sides);
   const playerBorderSegments = calculatePlayerBorderSegments(sides, players);
 
   // Calculate player name positions based on current rotation offset
@@ -44,41 +45,61 @@ const GameArea: React.FC<GameAreaProps> = ({ width = 900, height = 600 }) => {
   const playerNamePositions = calculatePlayerNamePositions(
     playerBorderSegments,
     gameDimensions,
-    rotationOffset,
+    0,
   );
 
-  // Setup GSAP animation for border rotation
+  // Setup canvas context
   useEffect(() => {
-    // GSAP animation for continuous rotation
-    if (players.length > 0) {
-      const rotationDuration = 5; // seconds for a full rotation
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-      // Clear any existing animations
-      gsap.killTweensOf({});
+    // Set canvas dimensions
+    canvas.width = width;
+    canvas.height = height;
 
-      // Create GSAP timeline for continuous rotation
-      const tl = gsap.timeline({ repeat: 0 });
+    // Get canvas context
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-      tl.to(
-        {},
-        {
-          duration: rotationDuration,
-          ease: "linear",
-          // onUpdate: function () {
-          //   // Calculate current rotation offset based on timeline progress
-          //   const progress = tl.progress();
-          //   // const newOffset = progress * perimeter;
-          //   // setRotationOffset(newOffset);
-          // },
-        },
-      );
+    // Clear canvas
+    ctx.clearRect(0, 0, width, height);
 
-      return () => {
-        // Cleanup animation when component unmounts
-        tl.kill();
-      };
-    }
-  }, [players.length, perimeter]);
+    // Canvas is now set up and ready for drawing
+    // Future tasks will include drawing the bouncing logo
+  }, [width, height]);
+
+  // Setup GSAP animation for border rotation
+  // useEffect(() => {
+  //   // GSAP animation for continuous rotation
+  //   if (players.length > 0) {
+  //     const rotationDuration = 5; // seconds for a full rotation
+
+  //     // Clear any existing animations
+  //     gsap.killTweensOf({});
+
+  //     // Create GSAP timeline for continuous rotation
+  //     const tl = gsap.timeline({ repeat: 0 });
+
+  //     tl.to(
+  //       {},
+  //       {
+  //         duration: rotationDuration,
+  //         ease: "linear",
+  //         // onUpdate: function () {
+  //         //   // Calculate current rotation offset based on timeline progress
+  //         //   const progress = tl.progress();
+  //         //   // const newOffset = progress * perimeter;
+  //         //   // setRotationOffset(newOffset);
+  //         // },
+  //       },
+  //     );
+
+  //     return () => {
+  //       // Cleanup animation when component unmounts
+  //       tl.kill();
+  //     };
+  //   }
+  // }, [players.length, perimeter]);
 
   return (
     <div
@@ -95,6 +116,15 @@ const GameArea: React.FC<GameAreaProps> = ({ width = 900, height = 600 }) => {
           backgroundColor: "#f5f5f5",
         }}
       >
+        {/* Canvas for drawing the bouncing logo */}
+        <canvas
+          data-testid="game-canvas"
+          ref={canvasRef}
+          className="absolute top-0 left-0 w-full h-full"
+          width={width}
+          height={height}
+        />
+
         {/* Container for player name boxes */}
         <div
           ref={nameBoxContainerRef}
@@ -109,8 +139,6 @@ const GameArea: React.FC<GameAreaProps> = ({ width = 900, height = 600 }) => {
             />
           ))}
         </div>
-
-        {/* Canvas for drawing borders will be added in a future task */}
       </div>
     </div>
   );
