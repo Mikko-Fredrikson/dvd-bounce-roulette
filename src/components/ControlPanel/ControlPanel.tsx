@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useSelector } from "react-redux";
+import NameInput from "../NameInput/NameInput";
 // import { RootState } from '../../store';
 
 /**
@@ -49,33 +50,11 @@ const ControlPanel = () => {
       </div>
 
       {/* Tab Content */}
-      <div className="flex-1 overflow-auto p-5">
+      <div className="flex-1 overflow-auto">
         {activeTab === "players" ? (
-          <div className="space-y-5">
-            <h3 className="text-lg font-medium text-slate-800">Players</h3>
-            {/* Player management UI */}
-            <div className="flex items-center space-x-2">
-              <input
-                type="text"
-                placeholder="Add player name"
-                className="flex-1 border border-slate-300 rounded-md py-2 px-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
-              />
-              <button className="bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition-colors shadow-sm focus:ring focus:ring-indigo-300 focus:outline-none">
-                Add
-              </button>
-            </div>
-
-            <div className="mt-5">
-              {/* Player list will go here once we have the state */}
-              <div className="bg-white rounded-lg shadow-sm p-4 border border-slate-200">
-                <div className="text-sm text-slate-500 text-center py-6">
-                  No players added yet
-                </div>
-              </div>
-            </div>
-          </div>
+          <NameInput />
         ) : (
-          <div className="space-y-5">
+          <div className="space-y-5 p-5">
             <h3 className="text-lg font-medium text-slate-800">
               Game Settings
             </h3>

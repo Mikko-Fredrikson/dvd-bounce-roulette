@@ -10,12 +10,12 @@
 
 ### Name-input
 
-- [ ] Create required slice for each player.
+- [x] Create required slice for each player.
   - Players need: Name, Health, Color, sectionStart, sectionLength
-  - [ ] Implement player reducer (Medium)
-  - [ ] Create actions for adding/removing players (Low)
-  - [ ] Implement color assignment logic (Medium)
-  - [ ] Create border section assignment algorithm (Medium)
+  - [x] Implement player reducer (Medium)
+  - [x] Create actions for adding/removing players (Low)
+  - [x] Implement color assignment logic (Medium)
+  - [x] Create border section assignment algorithm (Medium)
 
 ### Settings
 
@@ -29,6 +29,11 @@
 - [ ] Create game state slice (Medium)
   - [ ] Implement start/pause/reset functionality (Medium)
   - [ ] Add game loop with animation frame (High)
+
+### Player border sections
+
+- [ ] Add utility function to calculate how long each players border should be (circumference / playercount)
+- [ ] Calculate how many border sections
 
 ## Project Setup
 
