@@ -25,3 +25,17 @@ export interface BorderSide {
   /** Reference to the next side in clockwise order */
   nextSide?: BorderSide;
 }
+
+/**
+ * Represents a segment of the border assigned to a player
+ */
+export interface BorderSegment {
+  /** The side this segment belongs to */
+  side: BorderSide;
+
+  /** Position along the side where this segment starts (in pixels) */
+  startPosition: number;
+
+  /** Length of this segment (in pixels) */
+  length: number;
+}
