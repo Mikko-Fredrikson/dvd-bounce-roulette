@@ -15,7 +15,6 @@
   - [x] Implement player reducer (Medium)
   - [x] Create actions for adding/removing players (Low)
   - [x] Implement color assignment logic (Medium)
-  - [x] Create border section assignment algorithm (Medium)
 
 ### Settings
 
@@ -32,8 +31,14 @@
 
 ### Player border sections
 
-- [ ] Add utility function to calculate how long each players border should be (circumference / playercount)
-- [ ] Calculate how many border sections
+- [x] Add utility function to calculate how long each players border should be (circumference / playercount)
+- [ ] Calculate how many border sections there should be.
+- A loop for drawing player's corner
+- [ ] Crete a truct to store and refer the different lengths and properties of the gameArea's sides.
+- [ ] Draw player's section along the edge clockwise
+- [ ] Calculate if border section needs to continue around a corner.
+- [ ] Start a new section for the same player starting from the corner the previous one ended.
+- [ ] Start drawing border for next player where the previous player's border ended.
 
 ## Project Setup
 
