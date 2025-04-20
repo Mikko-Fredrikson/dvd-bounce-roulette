@@ -17,17 +17,17 @@ const ControlPanel = () => {
   return (
     <div
       data-testid="control-panel"
-      className="w-full h-full bg-white rounded-lg shadow-md p-4 flex flex-col"
+      className="w-full h-full bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg shadow-lg flex flex-col overflow-hidden"
     >
       {/* Tab Navigation */}
-      <div role="tablist" className="flex border-b border-gray-200 mb-4">
+      <div role="tablist" className="flex bg-white shadow-sm">
         <button
           role="tab"
           aria-selected={activeTab === "players"}
-          className={`py-2 px-4 font-medium text-sm ${
+          className={`py-3 px-6 font-medium text-sm flex-1 transition-all duration-200 ${
             activeTab === "players"
-              ? "border-b-2 border-blue-500 text-blue-600"
-              : "text-gray-500 hover:text-gray-700"
+              ? "bg-indigo-500 text-white"
+              : "text-slate-600 hover:bg-slate-100"
           }`}
           onClick={() => setActiveTab("players")}
         >
@@ -37,10 +37,10 @@ const ControlPanel = () => {
         <button
           role="tab"
           aria-selected={activeTab === "settings"}
-          className={`py-2 px-4 font-medium text-sm ${
+          className={`py-3 px-6 font-medium text-sm flex-1 transition-all duration-200 ${
             activeTab === "settings"
-              ? "border-b-2 border-blue-500 text-blue-600"
-              : "text-gray-500 hover:text-gray-700"
+              ? "bg-indigo-500 text-white"
+              : "text-slate-600 hover:bg-slate-100"
           }`}
           onClick={() => setActiveTab("settings")}
         >
@@ -49,69 +49,106 @@ const ControlPanel = () => {
       </div>
 
       {/* Tab Content */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto p-5">
         {activeTab === "players" ? (
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Players</h3>
-            {/* Player management UI will go here */}
+          <div className="space-y-5">
+            <h3 className="text-lg font-medium text-slate-800">Players</h3>
+            {/* Player management UI */}
             <div className="flex items-center space-x-2">
               <input
                 type="text"
                 placeholder="Add player name"
-                className="flex-1 border rounded py-1 px-2"
+                className="flex-1 border border-slate-300 rounded-md py-2 px-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
               />
-              <button className="bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-600">
+              <button className="bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition-colors shadow-sm focus:ring focus:ring-indigo-300 focus:outline-none">
                 Add
               </button>
             </div>
 
-            <div className="mt-4">
+            <div className="mt-5">
               {/* Player list will go here once we have the state */}
-              <div className="text-sm text-gray-500">No players added yet</div>
+              <div className="bg-white rounded-lg shadow-sm p-4 border border-slate-200">
+                <div className="text-sm text-slate-500 text-center py-6">
+                  No players added yet
+                </div>
+              </div>
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Game Settings</h3>
+          <div className="space-y-5">
+            <h3 className="text-lg font-medium text-slate-800">
+              Game Settings
+            </h3>
 
             {/* Logo upload */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium">Custom Logo</label>
-              <input
-                type="file"
-                accept="image/png"
-                className="block w-full text-sm"
-              />
+              <label className="block text-sm font-medium text-slate-700">
+                Custom Logo
+              </label>
+              <div className="flex items-center justify-center w-full">
+                <label className="flex flex-col rounded-lg border-2 border-dashed w-full h-32 p-3 group text-center border-slate-300 hover:border-indigo-500 transition-colors cursor-pointer">
+                  <div className="h-full w-full flex flex-col items-center justify-center">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-10 h-10 text-slate-400 group-hover:text-indigo-500 transition-colors"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                      />
+                    </svg>
+                    <p className="text-sm text-slate-500 group-hover:text-indigo-500 transition-colors">
+                      Click to upload PNG
+                    </p>
+                  </div>
+                  <input type="file" accept="image/png" className="hidden" />
+                </label>
+              </div>
             </div>
 
             {/* Angle variance */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium">
-                Angle Variance: <span>0°</span>
-              </label>
+            <div className="space-y-3 bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+              <div className="flex justify-between items-center">
+                <label className="block text-sm font-medium text-slate-700">
+                  Angle Variance
+                </label>
+                <span className="text-sm bg-slate-100 px-2 py-1 rounded-md font-mono">
+                  0°
+                </span>
+              </div>
               <input
                 type="range"
                 min="0"
                 max="45"
                 defaultValue="0"
-                className="w-full"
+                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
               />
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-slate-500">
                 Higher values make bounce angles less predictable
               </p>
             </div>
 
             {/* Player health */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium">
-                Player Health: <span>3</span>
-              </label>
+            <div className="space-y-3 bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+              <div className="flex justify-between items-center">
+                <label className="block text-sm font-medium text-slate-700">
+                  Player Health
+                </label>
+                <span className="text-sm bg-slate-100 px-2 py-1 rounded-md font-mono">
+                  3
+                </span>
+              </div>
               <input
                 type="range"
                 min="1"
                 max="10"
                 defaultValue="3"
-                className="w-full"
+                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
               />
             </div>
           </div>
@@ -119,17 +156,17 @@ const ControlPanel = () => {
       </div>
 
       {/* Game Controls */}
-      <div className="mt-4 pt-4 border-t border-gray-200 flex space-x-2">
-        <button className="flex-1 bg-green-500 text-white py-2 rounded hover:bg-green-600">
+      <div className="p-5 bg-white border-t border-slate-200 flex space-x-3 shadow-md">
+        <button className="flex-1 bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 shadow-sm font-medium">
           Start
         </button>
         <button
-          className="flex-1 bg-yellow-500 text-white py-2 rounded hover:bg-yellow-600"
+          className="flex-1 bg-amber-500 text-white py-3 px-4 rounded-md hover:bg-amber-600 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 shadow-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
           disabled
         >
           Pause
         </button>
-        <button className="flex-1 bg-red-500 text-white py-2 rounded hover:bg-red-600">
+        <button className="flex-1 bg-red-600 text-white py-3 px-4 rounded-md hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 shadow-sm font-medium">
           Reset
         </button>
       </div>

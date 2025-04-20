@@ -3,12 +3,10 @@
 ## [ ] Ui
 
 - [x] Game-area
-  - [ ] Implement DVD logo animation with GSAP (Medium)
-  - [ ] Create player border sections on canvas (Medium)
-  - [ ] Implement bounce physics and collision detection (High)
+  - [x] Create a 2:3 container with canvas for the bouncing logo.
 - [x] Container for name input and settings
-  - [ ] Implement tab navigation functionality (Low)
-  - [ ] Style the control panel with consistent theme (Low)
+  - [x] Implement tab navigation functionality (Low)
+  - [x] Style the control panel with consistent theme (Low)
 
 ### Name-input
 

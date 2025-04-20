@@ -1,5 +1,5 @@
 import { useRef, useEffect } from "react";
-import { useSelector } from "react-redux";
+// import { useSelector } from "react-redux";
 // import { RootState } from '../../store';
 
 /**
@@ -7,53 +7,54 @@ import { useSelector } from "react-redux";
  * and interacts with player borders.
  */
 const GameArea = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // We'll use these selectors once we have the Redux store set up
-  // const players = useSelector((state: RootState) => state.players.players);
-  // const gameSettings = useSelector((state: RootState) => state.settings);
-
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const handleResize = () => {
+      if (!containerRef.current || !canvasRef.current) return;
 
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+      const containerWidth = containerRef.current.clientWidth - 24; // Subtract padding (p-3 = 0.75rem = 12px on each side)
 
-    // Set canvas dimensions to maintain a 2:3 aspect ratio
-    const resizeCanvas = () => {
-      const container = canvas.parentElement;
-      if (!container) return;
+      // Calculate height to maintain exactly 3:2 aspect ratio (width:height)
+      const containerHeight = containerWidth * (2 / 3);
 
-      const containerWidth = container.clientWidth;
-      // Calculate height to maintain 2:3 aspect ratio (height:width)
-      const containerHeight = (containerWidth * 3) / 2;
+      // Set canvas dimensions
+      canvasRef.current.width = containerWidth;
+      canvasRef.current.height = containerHeight;
 
-      canvas.width = containerWidth;
-      canvas.height = containerHeight;
-
-      // Initial drawing will go here once game state is implemented
+      // Set canvas container style dimensions
+      canvasRef.current.style.width = `${containerWidth}px`;
+      canvasRef.current.style.height = `${containerHeight}px`;
     };
 
-    resizeCanvas();
-    window.addEventListener("resize", resizeCanvas);
+    // Initial size calculation
+    handleResize();
 
-    // Clean up event listener
+    // Recalculate on window resize
+    window.addEventListener("resize", handleResize);
+
     return () => {
-      window.removeEventListener("resize", resizeCanvas);
+      window.removeEventListener("resize", handleResize);
     };
   }, []);
 
   return (
     <div
       data-testid="game-area-container"
-      className="w-full h-full flex items-center justify-center bg-gray-900"
+      className="w-full h-full flex items-center justify-center bg-white rounded-lg p-3"
+      ref={containerRef}
     >
-      <canvas
-        ref={canvasRef}
-        data-testid="game-canvas"
-        className="border border-gray-700 shadow-lg"
-      />
+      <div className="canvas-wrapper" style={{ aspectRatio: "3/2" }}>
+        <div className="relative w-full h-full">
+          <div className="absolute inset-0 border border-slate-300 rounded-md"></div>
+          <canvas
+            ref={canvasRef}
+            data-testid="game-canvas"
+            className="relative z-10 rounded-md bg-white"
+          />
+        </div>
+      </div>
     </div>
   );
 };
