@@ -47,8 +47,31 @@
   - [x] Create component for player name display (Low)
   - [x] Calculate mid-point of each player's primary segment (Medium)
   - [x] Position name boxes outside the game area next to players' border segments (Medium)
-  - [ ] Animate name boxes to rotate with border segments (Medium)
+  - [x] Animate name boxes to rotate with border segments (Medium)
 - [x] Transform border segments counterclockwise along the game area border.
+- implement the bouncing logo.
+  - [ ] Implement an oval shape moving on the canvas, which bounces off of borders.
+    - [ ] Create a logo state slice for position, velocity, and appearance (Medium)
+    - [ ] Define logo animation properties (size, speed, default appearance) (Low)
+    - [ ] Implement physics for realistic bouncing behavior (Medium)
+    - [ ] Add support for configurable angle variance after bounces (Medium)
+  - [ ] Implement collision detection system.
+    - [ ] Create utility functions to detect collisions with border segments (High)
+    - [ ] Implement precise collision detection between the logo and borders (High)
+    - [ ] Add hit detection that identifies which player's segment was hit (Medium)
+    - [ ] Calculate accurate reflection angles on collision (Medium)
+  - [ ] Implement logo drawing and animation.
+    - [ ] Add support for custom images as the bouncing logo (Medium)
+    - [ ] Create a default DVD-style logo as fallback (Low)
+    - [ ] Implement smooth animation using requestAnimationFrame (Medium)
+    - [ ] Add visual feedback when collisions occur (Low)
+  - [ ] Integrate with game mechanics.
+    - [ ] Connect collision detection to player health reduction (Medium)
+    - [ ] Handle player elimination when health reaches zero (Medium)
+    - [ ] Implement game state changes (win conditions, etc.) (Medium)
+    - [ ] Add pause/resume functionality for the animation (Low)
+  - [ ] When the shape hits a border, it sets an state for the border side (`utils/borderUtils/borderSides.ts`) and position touched.
+-
 
 ## Project Setup
 
