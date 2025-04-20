@@ -46,3 +46,9 @@ Ui is shared in two sections
 - A white box which has two tabs.
   1. Name input & list.
   2. Settings for using your own png, angle variance and player health.
+
+### GameArea
+
+- Game area is a 3:2 rectangle.
+- Each player has a border section assigned to them in their color.
+- Next to the border sections, outside the game area, floats a component which includes the Name of the player that border section is assigned to.

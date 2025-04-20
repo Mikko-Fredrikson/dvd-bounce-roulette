@@ -4,13 +4,13 @@ import ControlPanel from "./components/ControlPanel/ControlPanel";
 function App() {
   return (
     <div className="app-container min-h-screen bg-slate-100 p-6">
-      <div className=" mx-auto">
+      <div className="mx-auto">
         <h1 className="text-3xl md:text-4xl font-bold text-center mb-8 text-slate-800">
           DVD Bounce Roulette
         </h1>
         <div className="game-container flex flex-col md:flex-row gap-6">
           {/* Game Area (2/3 of screen on larger devices) */}
-          <div className="w-full md:w-2/3 h-[60vh] md:h-[80vh]">
+          <div className="w-full md:w-2/3 flex items-center justify-center">
             <GameArea />
           </div>
 
