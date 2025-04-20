@@ -33,8 +33,8 @@
 
 - [x] Add utility function to calculate how long each players border should be (circumference / playercount)
 - [x] Create a truct to store and refer the different lengths and properties of the gameArea's sides.
-- [ ] Calculate if border section needs to continue around a corner.
-- [ ] Calculate how many border segments a player's border needs.
+- [x] Calculate if a player's border segment is too long for the side it is on depending on starting location and side length.
+- [ ] Calculate the border segments a player needs in total based on length and start pos.
 - A loop for drawing player's corner
 - [ ] Draw player's section along the edge clockwise
 - [ ] Start a new section for the same player starting from the corner the previous one ended.
