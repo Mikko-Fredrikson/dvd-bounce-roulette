@@ -9,6 +9,7 @@ interface PlayerNameBoxProps {
   name: string;
   color: string;
   position: Position;
+  hp: number;
 }
 
 /**
@@ -19,6 +20,7 @@ const PlayerNameBox: React.FC<PlayerNameBoxProps> = ({
   name,
   color,
   position,
+  hp,
 }) => {
   return (
     <div
@@ -31,7 +33,12 @@ const PlayerNameBox: React.FC<PlayerNameBoxProps> = ({
         zIndex: 10,
       }}
     >
-      {name}
+      <div className="flex flex-col items-center">
+        <div>{name}</div>
+        <div className="flex items-center gap-2 text-xs">
+          <span className="font-medium">HP: {hp}</span>
+        </div>
+      </div>
     </div>
   );
 };

@@ -180,6 +180,7 @@ const GameArea: React.FC<GameAreaProps> = ({
               name={namePos.playerName}
               color={namePos.playerColor}
               position={namePos.position}
+              hp={players.find((p) => p.id === namePos.playerId)?.health || 0}
             />
           ))}
         </div>
