@@ -5,6 +5,7 @@ export interface Player {
   color: string;
   sectionStart: number; // Starting point of player's border section (0-1)
   sectionLength: number; // Length of player's border section (0-1)
+  isEliminated: boolean; // Flag to indicate if the player is out
 }
 
 export interface PlayerState {
