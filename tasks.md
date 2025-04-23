@@ -53,9 +53,9 @@
 
   - [ ] Implement an oval shape moving on the canvas, which bounces off of borders.
 
-    - [ ] Create a logo state slice for position, velocity, and appearance (Medium)
-    - [ ] Define logo animation properties (size, speed, default appearance) (Low)
-    - [ ] Draw logo centered in gameArea
+    - [x] Create a logo state slice for position, velocity, and appearance (Medium)
+    - [x] Define logo animation properties (size, speed, default appearance) (Low)
+    - [x] Draw logo centered in gameArea
     - [ ] Animation loop
       - [ ] Separate animation loop from animated border segments.
       - [ ] use the animation loop for BOTH border segments and logo animation.

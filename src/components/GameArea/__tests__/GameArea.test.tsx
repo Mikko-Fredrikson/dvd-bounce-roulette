@@ -1,260 +1,156 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
-import GameArea from "../GameArea";
+import { render, screen, waitFor } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
+import GameArea from "../GameArea";
 import playerReducer from "../../../store/slices/playerSlice/playerSlice";
+import logoReducer from "../../../store/slices/logoSlice/logoSlice";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Mock animation frame
-globalThis.requestAnimationFrame = vi.fn((callback) => {
-  return setTimeout(() => callback(Date.now()), 0);
-});
-globalThis.cancelAnimationFrame = vi.fn((id) => {
-  clearTimeout(id);
-});
+// Mock the PlayerNameBox component
+vi.mock("../../PlayerNameBox/PlayerNameBox", () => ({
+  default: ({ name, color, position, hp }: any) => (
+    <div data-testid="player-name-box">
+      {name} - {color} - ({position.x}, {position.y}) - HP: {hp}
+    </div>
+  ),
+}));
 
-// Canvas mock setup
-const mockCanvasContext = {
+// Define the mock context structure outside beforeEach so it persists
+const mockCtx = {
+  clearRect: vi.fn(),
   beginPath: vi.fn(),
   moveTo: vi.fn(),
   lineTo: vi.fn(),
   stroke: vi.fn(),
-  clearRect: vi.fn(),
+  fillRect: vi.fn(),
 };
 
-// Create a mock store
-const createMockStore = (initialPlayers = []) => {
-  return configureStore({
+// Mock requestAnimationFrame and cancelAnimationFrame, and setup canvas mock
+beforeEach(() => {
+  vi.stubGlobal("requestAnimationFrame", vi.fn());
+  vi.stubGlobal("cancelAnimationFrame", vi.fn());
+  // Reset mocks before each test
+  vi.clearAllMocks();
+  // Mock getContext to return the persistent mock object
+  HTMLCanvasElement.prototype.getContext = vi.fn(() => mockCtx);
+});
+
+// Helper function to render GameArea with Redux Provider
+const renderGameArea = (initialState = {}) => {
+  const store = configureStore({
     reducer: {
       players: playerReducer,
+      logo: logoReducer,
     },
     preloadedState: {
       players: {
-        players: initialPlayers,
-        nextId: initialPlayers.length + 1,
-      },
-    },
-  });
-};
-
-const renderWithStore = (component, players = []) => {
-  const store = createMockStore(players);
-  return render(<Provider store={store}>{component}</Provider>);
-};
-
-// Mock the borderUtils methods
-vi.mock("../../../utils/borderUtils/borderSides", () => {
-  const mockTop = {
-    name: "top",
-    length: 900,
-    startPoint: { x: 0, y: 0 },
-    endPoint: { x: 900, y: 0 },
-    nextSide: null,
-  };
-
-  const mockRight = {
-    name: "right",
-    length: 600,
-    startPoint: { x: 900, y: 0 },
-    endPoint: { x: 900, y: 600 },
-    nextSide: null,
-  };
-
-  const mockBottom = {
-    name: "bottom",
-    length: 900,
-    startPoint: { x: 900, y: 600 },
-    endPoint: { x: 0, y: 600 },
-    nextSide: null,
-  };
-
-  const mockLeft = {
-    name: "left",
-    length: 600,
-    startPoint: { x: 0, y: 600 },
-    endPoint: { x: 0, y: 0 },
-    nextSide: null,
-  };
-
-  // Link the sides
-  mockTop.nextSide = mockRight;
-  mockRight.nextSide = mockBottom;
-  mockBottom.nextSide = mockLeft;
-  mockLeft.nextSide = mockTop;
-
-  const mockSides = [mockTop, mockRight, mockBottom, mockLeft];
-
-  return {
-    createBorderSides: vi.fn().mockReturnValue(mockSides),
-    getTotalPerimeter: vi.fn().mockReturnValue(3000), // 900 + 600 + 900 + 600
-    getSideByName: vi.fn((sides, name) =>
-      mockSides.find((side) => side.name === name),
-    ),
-    getPointOnSide: vi.fn(),
-  };
-});
-
-vi.mock("../../../utils/borderUtils/calculatePlayerBorderSegments", () => ({
-  calculatePlayerBorderSegments: vi
-    .fn()
-    .mockImplementation((sides, players, offset = 0) => {
-      return players.map((player) => ({
-        playerId: player.id,
-        playerName: player.name,
-        playerColor: player.color,
-        segments: [
+        players: [
           {
-            side: sides[0],
-            startPosition: offset % 900,
-            length: 300,
+            id: "1",
+            name: "Player 1",
+            health: 100,
+            color: "#ff0000",
+            borderShare: 0.5,
+          },
+          {
+            id: "2",
+            name: "Player 2",
+            health: 100,
+            color: "#0000ff",
+            borderShare: 0.5,
           },
         ],
-      }));
-    }),
-}));
-
-vi.mock("../../../utils/positionUtils/calculatePlayerNamePositions", () => ({
-  calculatePlayerNamePositions: vi.fn().mockImplementation((playerSegments) => {
-    return playerSegments.map((segment) => ({
-      playerId: segment.playerId,
-      playerName: segment.playerName,
-      playerColor: segment.playerColor,
-      position: { x: 100, y: -30 },
-    }));
-  }),
-}));
-
-describe("GameArea", () => {
-  const mockPlayers = [
-    {
-      id: "1",
-      name: "Player 1",
-      color: "#FF0000",
-      health: 100,
-      isAlive: true,
+      },
+      logo: {
+        position: { x: 450, y: 300 },
+        velocity: { x: 1, y: 1 },
+        size: { width: 50, height: 30 },
+        imageUrl: null,
+        angle: 45,
+        speed: Math.sqrt(2),
+      },
+      ...initialState,
     },
-    {
-      id: "2",
-      name: "Player 2",
-      color: "#00FF00",
-      health: 100,
-      isAlive: true,
-    },
-  ];
-
-  const mockWidth = 900;
-  const mockHeight = 600;
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-    HTMLCanvasElement.prototype.getContext = vi.fn(() => mockCanvasContext);
   });
 
+  return render(
+    <Provider store={store}>
+      <GameArea width={900} height={600} />
+    </Provider>,
+  );
+};
+
+describe("GameArea", () => {
   it("renders game area with correct aspect ratio", () => {
-    renderWithStore(
-      <GameArea width={mockWidth} height={mockHeight} />,
-      mockPlayers,
-    );
+    renderGameArea();
     const gameArea = screen.getByTestId("game-area");
     expect(gameArea).toBeInTheDocument();
+    const container = gameArea.parentElement;
+    expect(container).toHaveStyle("aspectRatio: 1.5");
+    expect(container).toHaveStyle("maxWidth: 900px");
   });
 
   it("canvas is rendered", () => {
-    renderWithStore(
-      <GameArea width={mockWidth} height={mockHeight} />,
-      mockPlayers,
-    );
+    renderGameArea();
     const canvas = screen.getByTestId("game-canvas");
     expect(canvas).toBeInTheDocument();
+    expect(canvas).toHaveAttribute("width", "900");
+    expect(canvas).toHaveAttribute("height", "600");
   });
 
-  it("draws player border segments on canvas", () => {
-    renderWithStore(
-      <GameArea width={mockWidth} height={mockHeight} />,
-      mockPlayers,
-    );
+  it("draws player border segments and logo on canvas", async () => {
+    renderGameArea();
 
-    // Canvas context should be initialized
-    expect(HTMLCanvasElement.prototype.getContext).toHaveBeenCalledWith("2d");
+    // Wait for the drawing calls within useEffect
+    await waitFor(() => {
+      // Assertions directly on the persistent mock context object
+      expect(mockCtx.clearRect).toHaveBeenCalled();
+      expect(mockCtx.fillRect).toHaveBeenCalled();
+      expect(mockCtx.stroke).toHaveBeenCalled();
 
-    // Canvas should be cleared before drawing
-    expect(mockCanvasContext.clearRect).toHaveBeenCalledWith(
-      0,
-      0,
-      mockWidth,
-      mockHeight,
-    );
-
-    // Test player segment drawing was called
-    expect(mockCanvasContext.beginPath).toHaveBeenCalled();
-    expect(mockCanvasContext.stroke).toHaveBeenCalled();
+      // Check the arguments of the first call to clearRect directly
+      expect(mockCtx.clearRect.mock.calls.length).toBeGreaterThan(0); // Ensure it was called
+      const clearRectArgs = mockCtx.clearRect.mock.calls[0];
+      expect(clearRectArgs).toEqual([0, 0, 900, 600]);
+    });
   });
 
   it("has visible boundaries", () => {
-    renderWithStore(<GameArea />, mockPlayers);
-    const container = screen.getByTestId("game-area");
-
-    // Check that the container has a border
-    const styles = window.getComputedStyle(container);
-    expect(styles.border).not.toBe("none");
+    renderGameArea();
+    const gameArea = screen.getByTestId("game-area");
+    expect(gameArea).toHaveStyle("border: 2px solid #1a1a1a");
   });
 
   it("sets up a container with correct aspect ratio", () => {
-    const width = 900;
-    const height = 600;
-    const aspectRatio = width / height;
-
-    renderWithStore(<GameArea width={width} height={height} />, mockPlayers);
+    renderGameArea();
     const container = screen.getByTestId("game-area").parentElement;
-
-    // Check that the aspect ratio is set correctly
-    expect(container).not.toBeNull();
-    if (container) {
-      expect(container.style.aspectRatio).toBe(aspectRatio.toString());
-      expect(container.style.maxWidth).toBe(`${width}px`);
-    }
+    expect(container).toHaveStyle("aspectRatio: 1.5");
+    expect(container).toHaveStyle("maxWidth: 900px");
   });
 
   it("fills its container dimensions", () => {
-    renderWithStore(<GameArea />, mockPlayers);
+    renderGameArea();
     const gameArea = screen.getByTestId("game-area");
-
-    expect(gameArea.className).toContain("w-full");
-    expect(gameArea.className).toContain("h-full");
+    expect(gameArea).toHaveClass("w-full h-full");
   });
 
   it("renders canvas element with correct dimensions", () => {
-    const width = 900;
-    const height = 600;
-
-    renderWithStore(<GameArea width={width} height={height} />, mockPlayers);
-
-    // Check that the canvas element exists
+    renderGameArea();
     const canvas = screen.getByTestId("game-canvas");
-    expect(canvas).toBeInTheDocument();
-
-    // Check that the canvas has the correct dimensions
-    expect(canvas).toHaveAttribute("width", width.toString());
-    expect(canvas).toHaveAttribute("height", height.toString());
-
-    // Check that the canvas fills the game area
-    expect(canvas.className).toContain("absolute");
-    expect(canvas.className).toContain("top-0");
-    expect(canvas.className).toContain("left-0");
+    expect(canvas).toHaveAttribute("width", "900");
+    expect(canvas).toHaveAttribute("height", "600");
   });
 
   it("sets up animation with requestAnimationFrame", () => {
-    // Mock requestAnimationFrame
-    const mockRequestAnimationFrame = vi.fn().mockReturnValue(123);
-    global.requestAnimationFrame = mockRequestAnimationFrame;
-    global.cancelAnimationFrame = vi.fn();
+    renderGameArea();
+    expect(requestAnimationFrame).toHaveBeenCalled();
+  });
 
-    renderWithStore(<GameArea animationSpeed={5} />, mockPlayers);
-
-    // Verify that requestAnimationFrame was called at least once to set up animation
-    expect(mockRequestAnimationFrame).toHaveBeenCalled();
-
-    // Cleanup
-    vi.restoreAllMocks();
+  it("renders PlayerNameBox components", () => {
+    renderGameArea();
+    const nameBoxes = screen.getAllByTestId("player-name-box");
+    expect(nameBoxes.length).toBe(2);
+    expect(nameBoxes[0]).toHaveTextContent("Player 1");
+    expect(nameBoxes[1]).toHaveTextContent("Player 2");
   });
 });
