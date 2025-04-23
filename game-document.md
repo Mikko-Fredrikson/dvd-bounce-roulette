@@ -24,6 +24,7 @@
 - If a player runs out of health, Their border section is removed.
   - The space their section took, is shared between the two players surrounding them.
     - This means each player no longer has equal size sections.
+    - Share the fallen player's length with the two surrounding players.
 - Last player remaining wins.
 
 ## Controls

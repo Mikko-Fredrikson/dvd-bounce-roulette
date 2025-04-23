@@ -41,9 +41,12 @@ const GameArea: React.FC<GameAreaProps> = ({
 
   // Get players, logo, and game status from Redux store
   const dispatch = useDispatch();
-  const players = useSelector((state: RootState) => state.players.players);
+  const allPlayers = useSelector((state: RootState) => state.players.players);
   const logo = useSelector((state: RootState) => state.logo);
   const gameStatus = useSelector((state: RootState) => state.gameState.status);
+
+  // Filter out eliminated players
+  const activePlayers = allPlayers.filter((player) => !player.isEliminated);
 
   // Animation state
   const [offset, setOffset] = useState(0);
@@ -52,12 +55,12 @@ const GameArea: React.FC<GameAreaProps> = ({
   const nameBoxContainerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Calculate border segments for all players
+  // Calculate border segments for active players
   const sides = createBorderSides(width, height);
   const perimeter = getTotalPerimeter(sides);
   const playerBorderSegments = calculatePlayerBorderSegments(
     sides,
-    players,
+    activePlayers,
     offset,
   );
 
@@ -238,7 +241,12 @@ const GameArea: React.FC<GameAreaProps> = ({
         console.log(
           `Collision detected! Side: ${collisionSide}, Point: ${collisionPoint}, Player Hit: ${hitPlayerSegment.playerName} (ID: ${hitPlayerSegment.playerId})`,
         );
-        dispatch(decrementPlayerHealth(hitPlayerSegment.playerId));
+        const hitPlayer = activePlayers.find(
+          (p) => p.id === hitPlayerSegment.playerId,
+        );
+        if (hitPlayer && !hitPlayer.isEliminated) {
+          dispatch(decrementPlayerHealth(hitPlayerSegment.playerId));
+        }
       } else {
         console.log(
           `Collision detected! Side: ${collisionSide}, Point: ${collisionPoint}, No player segment found at this point.`,
@@ -268,6 +276,7 @@ const GameArea: React.FC<GameAreaProps> = ({
     width,
     height,
     playerBorderSegments,
+    activePlayers,
     gameStatus,
   ]);
 
@@ -358,7 +367,9 @@ const GameArea: React.FC<GameAreaProps> = ({
               name={namePos.playerName}
               color={namePos.playerColor}
               position={namePos.position}
-              hp={players.find((p) => p.id === namePos.playerId)?.health || 0}
+              hp={
+                allPlayers.find((p) => p.id === namePos.playerId)?.health || 0
+              }
             />
           ))}
         </div>
