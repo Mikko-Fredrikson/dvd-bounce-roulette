@@ -19,6 +19,7 @@ import {
 } from "../../store/slices/logoSlice/logoSlice";
 import { decrementPlayerHealth } from "../../store/slices/playerSlice/playerSlice";
 import { PlayerBorderSegments } from "../../utils/borderUtils/types";
+import { GameStatus } from "../../store/slices/gameStateSlice/types";
 
 interface GameAreaProps {
   width?: number;
@@ -38,10 +39,11 @@ const GameArea: React.FC<GameAreaProps> = ({
   // Fixed aspect ratio of 3:2 (width:height)
   const aspectRatio = width / height;
 
-  // Get players and logo from Redux store
+  // Get players, logo, and game status from Redux store
   const dispatch = useDispatch();
   const players = useSelector((state: RootState) => state.players.players);
   const logo = useSelector((state: RootState) => state.logo);
+  const gameStatus = useSelector((state: RootState) => state.gameState.status);
 
   // Animation state
   const [offset, setOffset] = useState(0);
@@ -155,6 +157,16 @@ const GameArea: React.FC<GameAreaProps> = ({
 
   // Combined animation loop for border rotation and logo movement
   const animate = React.useCallback(() => {
+    // Only run animation logic if the game is running
+    if (gameStatus !== "running") {
+      // If paused or idle, ensure the animation frame is cancelled
+      if (animationRef.current !== null) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null; // Clear the ref
+      }
+      return; // Stop the loop if not running
+    }
+
     // Update border offset
     setOffset((prevOffset) => (prevOffset + animationSpeed) % perimeter);
 
@@ -241,8 +253,10 @@ const GameArea: React.FC<GameAreaProps> = ({
       }),
     );
 
-    // Request next frame
-    animationRef.current = requestAnimationFrame(animate);
+    // Request next frame ONLY if still running
+    if (gameStatus === "running") {
+      animationRef.current = requestAnimationFrame(animate);
+    }
   }, [
     animationSpeed,
     perimeter,
@@ -253,9 +267,10 @@ const GameArea: React.FC<GameAreaProps> = ({
     width,
     height,
     playerBorderSegments,
+    gameStatus,
   ]);
 
-  // Setup canvas context and start animation
+  // Setup canvas context and manage animation loop based on gameStatus
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -273,19 +288,19 @@ const GameArea: React.FC<GameAreaProps> = ({
       dispatch(initializeLogoPosition({ x: width / 2, y: height / 2 }));
     }
 
-    // Start the combined animation loop
-    if (animationRef.current !== null) {
-      cancelAnimationFrame(animationRef.current);
+    // Start animation loop if game is running
+    if (gameStatus === "running" && animationRef.current === null) {
+      animationRef.current = requestAnimationFrame(animate);
     }
-    animationRef.current = requestAnimationFrame(animate);
 
-    // Cleanup animation loop on unmount
+    // Cleanup animation loop on unmount or game stop
     return () => {
       if (animationRef.current !== null) {
         cancelAnimationFrame(animationRef.current);
+        animationRef.current = null; // Clear the ref on cleanup
       }
     };
-  }, [width, height, animate, dispatch, logo.position.x, logo.position.y]);
+  }, [width, height, animate, dispatch, logo.position.x, logo.position.y, gameStatus]);
 
   // Update canvas when player border segments or logo state change
   useEffect(() => {
@@ -297,7 +312,7 @@ const GameArea: React.FC<GameAreaProps> = ({
 
     // Draw game elements (borders and logo)
     drawGameElements(ctx);
-  }, [playerBorderSegments, drawGameElements, logo]);
+  }, [playerBorderSegments, drawGameElements, logo, gameStatus]);
 
   return (
     <div
