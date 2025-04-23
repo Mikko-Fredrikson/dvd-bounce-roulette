@@ -49,28 +49,46 @@
   - [x] Position name boxes outside the game area next to players' border segments (Medium)
   - [x] Animate name boxes to rotate with border segments (Medium)
 - [x] Transform border segments counterclockwise along the game area border.
-- implement the bouncing logo.
+- implement the logo animation.
+
   - [ ] Implement an oval shape moving on the canvas, which bounces off of borders.
+
     - [ ] Create a logo state slice for position, velocity, and appearance (Medium)
     - [ ] Define logo animation properties (size, speed, default appearance) (Low)
-    - [ ] Implement physics for realistic bouncing behavior (Medium)
-    - [ ] Add support for configurable angle variance after bounces (Medium)
-  - [ ] Implement collision detection system.
-    - [ ] Create utility functions to detect collisions with border segments (High)
-    - [ ] Implement precise collision detection between the logo and borders (High)
-    - [ ] Add hit detection that identifies which player's segment was hit (Medium)
-    - [ ] Calculate accurate reflection angles on collision (Medium)
-  - [ ] Implement logo drawing and animation.
-    - [ ] Add support for custom images as the bouncing logo (Medium)
-    - [ ] Create a default DVD-style logo as fallback (Low)
-    - [ ] Implement smooth animation using requestAnimationFrame (Medium)
-    - [ ] Add visual feedback when collisions occur (Low)
+    - [ ] Draw logo centered in gameArea
+    - [ ] Animation loop
+      - [ ] Separate animation loop from animated border segments.
+      - [ ] use the animation loop for BOTH border segments and logo animation.
+    - [ ] Handle collision with gameArea borders.
+      - [ ] Define logo boundaries based on its current position and dimensions (e.g., top, bottom, left, right edges).
+      - [ ] Check if the logo's top edge hits or exceeds the top border of the game area.
+      - [ ] Check if the logo's bottom edge hits or exceeds the bottom border of the game area.
+      - [ ] Check if the logo's left edge hits or exceeds the left border of the game area.
+      - [ ] Check if the logo's right edge hits or exceeds the right border of the game area.
+      - [ ] If a collision with a horizontal border (top/bottom) is detected, reverse the vertical component of the logo's velocity.
+      - [ ] If a collision with a vertical border (left/right) is detected, reverse the horizontal component of the logo's velocity.
+      - [ ] Optional: Add angle variance logic upon collision based on settings (may depend on settings slice implementation).
+      - [ ] Ensure collision detection accounts for potential high speeds (preventing the logo from passing through the border between frames).
+
+  - [ ] Handle logo collision with player border segments.
+
+    - [ ] Determine the exact point of collision on the game area border.
+    - [ ] Identify which player's border segment is at the collision point at the time of impact.
+      - [ ] Consider the current rotation of the border segments.
+      - [ ] Map the collision coordinates to the corresponding player segment.
+    - [ ] Dispatch an action to reduce the health of the identified player.
+      - [ ] Refer to the player's state using their assigned ID or name.
+    - [ ] Check if the player's health has reached zero after the hit.
+    - [ ] If health is zero, trigger player elimination logic.
+      - [ ] Remove the player's border segment(s).
+      - [ ] Recalculate and redistribute the freed border space to adjacent players (refer to game rules in `game-document.md`).
+      - [ ] Update the player list/state.
+    - [ ] Check for win conditions (e.g., only one player remaining).
+
   - [ ] Integrate with game mechanics.
-    - [ ] Connect collision detection to player health reduction (Medium)
-    - [ ] Handle player elimination when health reaches zero (Medium)
-    - [ ] Implement game state changes (win conditions, etc.) (Medium)
-    - [ ] Add pause/resume functionality for the animation (Low)
+
   - [ ] When the shape hits a border, it sets an state for the border side (`utils/borderUtils/borderSides.ts`) and position touched.
+
 -
 
 ## Project Setup
