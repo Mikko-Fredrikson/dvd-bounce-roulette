@@ -1,99 +1,77 @@
 import { BorderSide, PlayerBorderSegments } from "./types";
-import { calculateBorderLength } from "./calculateBorderLength";
+// Remove calculateBorderLength import, no longer needed here
 import { calculateBorderSegments } from "./calculateBorderSegments";
 import { Player } from "../../store/slices/playerSlice/types";
 import { getTotalPerimeter } from "./borderSides";
 
 /**
- * Calculates border segments for all players in the game and assigns them to specific players
+ * Calculates border segments for all players based on their stored start/length percentages and a rotation offset.
  *
  * @param sides - Array of BorderSide objects representing the game area
- * @param players - Array of Player objects to assign segments to
- * @param startOffset - Optional number of pixels to offset the starting position counterclockwise (default: 0)
+ * @param players - Array of Player objects (should be active players with correct sectionStart/sectionLength)
+ * @param rotationOffsetPixels - Number of pixels to offset the starting position counterclockwise (default: 0)
  * @returns Array of PlayerBorderSegments with segments assigned to each player
  */
 export function calculatePlayerBorderSegments(
   sides: BorderSide[],
   players: Player[],
-  startOffset: number = 0,
+  rotationOffsetPixels: number = 0,
 ): PlayerBorderSegments[] {
-  // If there are no players, return an empty array
   if (players.length === 0 || sides.length === 0) {
     return [];
   }
 
-  // Calculate the width and height based on the first side (top) and second side (right)
-  // assuming sides are ordered correctly (top, right, bottom, left)
-  const width = sides[0].length;
-  const height = sides[1].length;
+  const totalPerimeter = getTotalPerimeter(sides);
+  if (totalPerimeter <= 0) return []; // Avoid division by zero
 
-  // Calculate border length for each player
-  const lengthPerPlayer = calculateBorderLength(width, height, players.length);
-
-  // Array to store each player's segments with their information
   const playerBorderSegments: PlayerBorderSegments[] = [];
 
-  // Apply the start offset to determine the initial position and side
-  let currentSide = sides[0]; // Start with the top side by default
-  let currentPosition = 0;
+  // Normalize the rotation offset
+  const normalizedRotationOffset = rotationOffsetPixels % totalPerimeter;
 
-  if (startOffset > 0) {
-    const totalPerimeter = getTotalPerimeter(sides);
-    // Normalize the offset to be within a single perimeter
-    const normalizedOffset = startOffset % totalPerimeter;
+  for (const player of players) {
+    // Calculate the player's absolute start position in pixels based on their percentage and the total perimeter
+    const playerStartPixelsAbsolute = player.sectionStart * totalPerimeter;
+    // Calculate the player's absolute length in pixels
+    const playerLengthPixels = player.sectionLength * totalPerimeter;
 
-    // Find the correct side and position based on the offset
-    let remainingOffset = normalizedOffset;
+    // Apply the rotation offset to the player's absolute start position
+    const playerStartPixelsWithOffset =
+      (playerStartPixelsAbsolute + normalizedRotationOffset) % totalPerimeter;
+
+    // Find the starting side and position in pixels based on the offset start
+    let currentSide: BorderSide | null = null;
+    let currentPositionPixels = 0;
+    let remainingOffset = playerStartPixelsWithOffset;
 
     for (const side of sides) {
       if (remainingOffset < side.length) {
-        // Found the side where the offset lands
         currentSide = side;
-        currentPosition = remainingOffset;
+        currentPositionPixels = remainingOffset;
         break;
       }
-
-      // Offset extends beyond this side, subtract this side's length and continue
       remainingOffset -= side.length;
     }
-  }
 
-  // For each player, calculate their segments
-  for (let i = 0; i < players.length; i++) {
-    const player = players[i];
+    // If we couldn't find a side (shouldn't happen with valid input), skip player
+    if (!currentSide) {
+      console.error("Could not determine starting side for player", player);
+      continue;
+    }
 
-    // Calculate border segments for this player starting at the current position
+    // Calculate the actual segments for this player using their specific length
     const segments = calculateBorderSegments(
       currentSide,
-      currentPosition,
-      lengthPerPlayer,
+      currentPositionPixels,
+      playerLengthPixels, // Use the player's specific length in pixels
     );
 
-    // Add player data with their segments
     playerBorderSegments.push({
       playerId: player.id,
       playerName: player.name,
       playerColor: player.color,
       segments: segments,
     });
-
-    // Update the current position for the next player
-    // Get the last segment of the current player
-    const lastSegment = segments[segments.length - 1];
-
-    // If we need to move to the next side
-    if (
-      lastSegment.startPosition + lastSegment.length >=
-      lastSegment.side.length
-    ) {
-      // Move to the next side at position 0
-      currentSide = lastSegment.side.nextSide!;
-      currentPosition = 0;
-    } else {
-      // Stay on the same side but move position after this segment
-      currentSide = lastSegment.side;
-      currentPosition = lastSegment.startPosition + lastSegment.length;
-    }
   }
 
   return playerBorderSegments;
