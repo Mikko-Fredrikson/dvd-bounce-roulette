@@ -18,9 +18,14 @@
 
 ### Settings
 
-- [ ] Create settings slice for game configuration
+- [x] Create settings slice for game configuration
+  - [x] Define state shape (angleVariance, playerHealth, customLogo) (Low)
+  - [x] Implement reducers for updating settings (Low)
+  - [x] Write unit tests for settings slice (Medium)
   - [ ] Implement logo upload and preview (Medium)
-  - [ ] Add angle variance controls (Low)
+  - [x] Add angle variance controls (Low)
+    - [x] Connect slider in ControlPanel to dispatch update action (Low)
+    - [x] Display current variance value in ControlPanel (Low)
   - [ ] Add player health controls (Low)
 
 ### Game Controls
@@ -68,7 +73,7 @@
       - [x] Check if the logo's right edge hits or exceeds the right border of the game area.
       - [x] If a collision with a horizontal border (top/bottom) is detected, reverse the vertical component of the logo's velocity.
       - [x] If a collision with a vertical border (left/right) is detected, reverse the horizontal component of the logo's velocity.
-      - [ ] Optional: Add angle variance logic upon collision based on settings (may depend on settings slice implementation).
+      - [x] Add angle variance logic upon collision based on settings (Medium)
       - [ ] Ensure collision detection accounts for potential high speeds (preventing the logo from passing through the border between frames).
 
   - [ ] Handle logo collision with player border segments.

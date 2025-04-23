@@ -1,6 +1,8 @@
 import { useState } from "react";
 import NameInput from "../NameInput/NameInput";
 import GameControls from "../GameControls/GameControls"; // Import GameControls
+import { useAppDispatch, useAppSelector } from "../../store/hooks"; // Import hooks
+import { setAngleVariance } from "../../store/slices/settingsSlice/settingsSlice"; // Import action
 
 /**
  * ControlPanel component displays the side panel with tabs for:
@@ -9,6 +11,15 @@ import GameControls from "../GameControls/GameControls"; // Import GameControls
  */
 const ControlPanel = () => {
   const [activeTab, setActiveTab] = useState<"players" | "settings">("players");
+  const dispatch = useAppDispatch();
+  const angleVariance = useAppSelector((state) => state.settings.angleVariance);
+
+  const handleAngleVarianceChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const value = parseInt(event.target.value, 10);
+    dispatch(setAngleVariance(value));
+  };
 
   return (
     <div
@@ -88,22 +99,27 @@ const ControlPanel = () => {
             {/* Angle variance */}
             <div className="space-y-3 bg-white p-4 rounded-lg shadow-sm border border-slate-200">
               <div className="flex justify-between items-center">
-                <label className="block text-sm font-medium text-slate-700">
+                <label
+                  htmlFor="angle-variance-slider"
+                  className="block text-sm font-medium text-slate-700"
+                >
                   Angle Variance
                 </label>
                 <span className="text-sm bg-slate-100 px-2 py-1 rounded-md font-mono">
-                  0°
+                  {angleVariance}°
                 </span>
               </div>
               <input
+                id="angle-variance-slider"
                 type="range"
                 min="0"
                 max="45"
-                defaultValue="0"
+                value={angleVariance} // Use value from state
+                onChange={handleAngleVarianceChange} // Handle change
                 className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
               />
               <p className="text-xs text-slate-500">
-                Higher values make bounce angles less predictable
+                Max angle deviation on bounce (±{angleVariance / 2}°)
               </p>
             </div>
 
