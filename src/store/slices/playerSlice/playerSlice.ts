@@ -80,9 +80,13 @@ export const playerSlice = createSlice({
       }
     },
 
-    resetAllPlayers: (state) => {
-      state.players = [];
-      usedColors = {};
+    // Renamed from resetAllPlayers
+    resetPlayersHealth: (state) => {
+      // Reset health to 3 for all players instead of removing them
+      state.players.forEach((player) => {
+        player.health = 3; // Assuming 3 is the initial health
+      });
+      // Keep usedColors as is, no need to reset if players remain
     },
   },
 });
@@ -92,7 +96,7 @@ export const {
   removePlayer,
   updatePlayerName,
   decrementPlayerHealth,
-  resetAllPlayers,
+  resetPlayersHealth, // Export renamed action
 } = playerSlice.actions;
 
 export default playerSlice.reducer;

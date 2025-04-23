@@ -5,6 +5,7 @@ import type { LogoState, Vector2D, Size } from "./types";
 const DEFAULT_LOGO_SIZE: Size = { width: 50, height: 30 }; // Example size in pixels
 const DEFAULT_SPEED = 2; // Example speed in pixels per frame
 const INITIAL_ANGLE = 45; // Example initial angle in degrees
+const DEFAULT_INITIAL_POSITION: Vector2D = { x: 0, y: 0 }; // Default initial position
 
 // Function to calculate initial velocity from angle and speed
 const calculateVelocity = (angle: number, speed: number): Vector2D => {
@@ -16,9 +17,8 @@ const calculateVelocity = (angle: number, speed: number): Vector2D => {
 };
 
 const initialState: LogoState = {
-  // Initial position will likely be set dynamically based on GameArea dimensions
-  // For now, setting to 0,0 - needs adjustment when GameArea is ready
-  position: { x: 0, y: 0 },
+  position: DEFAULT_INITIAL_POSITION, // Use default initial position
+  initialPosition: DEFAULT_INITIAL_POSITION, // Store initial position
   velocity: calculateVelocity(INITIAL_ANGLE, DEFAULT_SPEED),
   size: DEFAULT_LOGO_SIZE,
   imageUrl: null, // No default image initially
@@ -57,6 +57,7 @@ const logoSlice = createSlice({
     // Reducer to set initial position, useful after GameArea dimensions are known
     initializeLogoPosition: (state, action: PayloadAction<Vector2D>) => {
       state.position = action.payload;
+      state.initialPosition = action.payload; // Store the initial position
     },
     // Add other reducers as needed, e.g., for bouncing logic
     reverseVelocityX: (state) => {
@@ -68,6 +69,10 @@ const logoSlice = createSlice({
       state.velocity.y *= -1;
       state.angle =
         (Math.atan2(state.velocity.y, state.velocity.x) * 180) / Math.PI;
+    },
+    // New reducer to reset logo position to its initialized position
+    resetLogoPosition: (state) => {
+      state.position = state.initialPosition; // Reset to the stored initial position
     },
   },
 });
@@ -82,6 +87,7 @@ export const {
   initializeLogoPosition,
   reverseVelocityX,
   reverseVelocityY,
+  resetLogoPosition, // Export the new action
 } = logoSlice.actions;
 
 export default logoSlice.reducer;

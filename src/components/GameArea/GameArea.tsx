@@ -210,27 +210,28 @@ const GameArea: React.FC<GameAreaProps> = ({
     // If a collision occurred, find the player segment hit
     if (collisionSide && collisionPoint !== null) {
       // Find the player whose segment was hit
-      const hitPlayerSegment = (playerBorderSegments as PlayerBorderSegments[]).find(
-        (playerSegment) =>
-          playerSegment.segments.some((segment) => {
-            if (segment.side.name !== collisionSide) {
-              return false;
-            }
+      const hitPlayerSegment = (
+        playerBorderSegments as PlayerBorderSegments[]
+      ).find((playerSegment) =>
+        playerSegment.segments.some((segment) => {
+          if (segment.side.name !== collisionSide) {
+            return false;
+          }
 
-            let pointToCheck = collisionPoint!;
-            // Adjust collision point based on side for comparison with segment startPosition
-            if (collisionSide === "bottom") {
-              pointToCheck = width - collisionPoint!; // Bottom side coordinates run right-to-left
-            } else if (collisionSide === "left") {
-              pointToCheck = height - collisionPoint!; // Left side coordinates run bottom-to-top
-            }
+          let pointToCheck = collisionPoint!;
+          // Adjust collision point based on side for comparison with segment startPosition
+          if (collisionSide === "bottom") {
+            pointToCheck = width - collisionPoint!; // Bottom side coordinates run right-to-left
+          } else if (collisionSide === "left") {
+            pointToCheck = height - collisionPoint!; // Left side coordinates run bottom-to-top
+          }
 
-            // Check if the collision point falls within the segment's range
-            return (
-              pointToCheck >= segment.startPosition &&
-              pointToCheck < segment.startPosition + segment.length
-            );
-          }),
+          // Check if the collision point falls within the segment's range
+          return (
+            pointToCheck >= segment.startPosition &&
+            pointToCheck < segment.startPosition + segment.length
+          );
+        }),
       );
 
       if (hitPlayerSegment) {
@@ -300,7 +301,15 @@ const GameArea: React.FC<GameAreaProps> = ({
         animationRef.current = null; // Clear the ref on cleanup
       }
     };
-  }, [width, height, animate, dispatch, logo.position.x, logo.position.y, gameStatus]);
+  }, [
+    width,
+    height,
+    animate,
+    dispatch,
+    logo.position.x,
+    logo.position.y,
+    gameStatus,
+  ]);
 
   // Update canvas when player border segments or logo state change
   useEffect(() => {

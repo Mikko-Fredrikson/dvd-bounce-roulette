@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { useSelector } from "react-redux";
 import NameInput from "../NameInput/NameInput";
-// import { RootState } from '../../store';
+import GameControls from "../GameControls/GameControls"; // Import GameControls
 
 /**
  * ControlPanel component displays the side panel with tabs for:
@@ -10,10 +9,6 @@ import NameInput from "../NameInput/NameInput";
  */
 const ControlPanel = () => {
   const [activeTab, setActiveTab] = useState<"players" | "settings">("players");
-
-  // We'll use these selectors once we have the Redux store set up
-  // const players = useSelector((state: RootState) => state.players.players);
-  // const gameSettings = useSelector((state: RootState) => state.settings);
 
   return (
     <div
@@ -135,20 +130,7 @@ const ControlPanel = () => {
       </div>
 
       {/* Game Controls */}
-      <div className="p-5 bg-white border-t border-slate-200 flex space-x-3 shadow-md">
-        <button className="flex-1 bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 shadow-sm font-medium">
-          Start
-        </button>
-        <button
-          className="flex-1 bg-amber-500 text-white py-3 px-4 rounded-md hover:bg-amber-600 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 shadow-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
-          disabled
-        >
-          Pause
-        </button>
-        <button className="flex-1 bg-red-600 text-white py-3 px-4 rounded-md hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 shadow-sm font-medium">
-          Reset
-        </button>
-      </div>
+      <GameControls />
     </div>
   );
 };
