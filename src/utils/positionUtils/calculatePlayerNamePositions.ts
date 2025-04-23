@@ -165,7 +165,7 @@ function calculateBoxPosition(
   // Position the box outside the game area based on which side the segment is on
   switch (sideName) {
     case "top":
-      return { x: midpoint.x, y: -OFFSET_DISTANCE };
+      return { x: midpoint.x, y: -OFFSET_DISTANCE * 1.5 };
     case "right":
       return { x: width + OFFSET_DISTANCE / 2, y: midpoint.y };
     case "bottom":
