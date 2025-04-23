@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { calculatePlayerBorderSegments } from "../calculatePlayerBorderSegments";
-import { createBorderSides } from "../borderSides";
+import { createBorderSides, getTotalPerimeter } from "../borderSides"; // Import getTotalPerimeter
 import { Player } from "../../../store/slices/playerSlice/types";
 
 describe("calculatePlayerBorderSegments", () => {
@@ -15,6 +15,7 @@ describe("calculatePlayerBorderSegments", () => {
     const width = 800;
     const height = 600;
     const sides = createBorderSides(width, height);
+    const totalPerimeter = getTotalPerimeter(sides); // Calculate total perimeter
 
     const players: Player[] = [
       {
@@ -22,7 +23,10 @@ describe("calculatePlayerBorderSegments", () => {
         name: "Player 1",
         color: "#FF0000",
         sectionStart: 0,
-        sectionLength: 0,
+        sectionLength: 1.0, // Player gets the whole border
+        health: 3, // Use realistic health
+        isEliminated: false,
+        eliminationOrder: null,
       },
     ];
 
@@ -42,7 +46,7 @@ describe("calculatePlayerBorderSegments", () => {
       (sum, segment) => sum + segment.length,
       0,
     );
-    expect(totalSegmentLength).toBe(2 * (width + height));
+    expect(totalSegmentLength).toBeCloseTo(totalPerimeter); // Use toBeCloseTo for float precision
 
     // Check that we have segments for each side
     const segmentSides = result[0].segments.map((segment) => segment.side.name);
@@ -56,6 +60,7 @@ describe("calculatePlayerBorderSegments", () => {
     const width = 800;
     const height = 600;
     const sides = createBorderSides(width, height);
+    const totalPerimeter = getTotalPerimeter(sides); // Calculate total perimeter
 
     const players: Player[] = [
       {
@@ -63,28 +68,40 @@ describe("calculatePlayerBorderSegments", () => {
         name: "Player 1",
         color: "#FF0000",
         sectionStart: 0,
-        sectionLength: 0,
+        sectionLength: 0.25, // Assign 1/4 length
+        health: 3,
+        isEliminated: false,
+        eliminationOrder: null,
       },
       {
         id: "2",
         name: "Player 2",
         color: "#00FF00",
-        sectionStart: 0,
-        sectionLength: 0,
+        sectionStart: 0.25, // Start after player 1
+        sectionLength: 0.25, // Assign 1/4 length
+        health: 3,
+        isEliminated: false,
+        eliminationOrder: null,
       },
       {
         id: "3",
         name: "Player 3",
         color: "#0000FF",
-        sectionStart: 0,
-        sectionLength: 0,
+        sectionStart: 0.5, // Start after player 2
+        sectionLength: 0.25, // Assign 1/4 length
+        health: 3,
+        isEliminated: false,
+        eliminationOrder: null,
       },
       {
         id: "4",
         name: "Player 4",
         color: "#FFFF00",
-        sectionStart: 0,
-        sectionLength: 0,
+        sectionStart: 0.75, // Start after player 3
+        sectionLength: 0.25, // Assign 1/4 length
+        health: 3,
+        isEliminated: false,
+        eliminationOrder: null,
       },
     ];
 
@@ -94,8 +111,7 @@ describe("calculatePlayerBorderSegments", () => {
     expect(result.length).toBe(4);
 
     // Each player should have segments that total to 1/4 of the perimeter
-    const perimeter = 2 * (width + height);
-    const expectedLengthPerPlayer = perimeter / players.length;
+    const expectedLengthPerPlayer = totalPerimeter / players.length; // Use calculated perimeter
 
     result.forEach((playerData) => {
       const totalLength = playerData.segments.reduce(
@@ -139,7 +155,10 @@ describe("calculatePlayerBorderSegments", () => {
   });
 
   it("should handle uneven distribution correctly", () => {
-    const sides = createBorderSides(100, 50); // Perimeter = 300
+    const width = 100;
+    const height = 50;
+    const sides = createBorderSides(width, height);
+    const totalPerimeter = getTotalPerimeter(sides); // Perimeter = 300
 
     const players: Player[] = [
       {
@@ -147,21 +166,30 @@ describe("calculatePlayerBorderSegments", () => {
         name: "Player 1",
         color: "#FF0000",
         sectionStart: 0,
-        sectionLength: 0,
+        sectionLength: 150 / totalPerimeter, // Player 1 gets 150px (half)
+        health: 3,
+        isEliminated: false,
+        eliminationOrder: null,
       },
       {
         id: "2",
         name: "Player 2",
         color: "#00FF00",
-        sectionStart: 0,
-        sectionLength: 0,
+        sectionStart: 150 / totalPerimeter, // Starts after player 1
+        sectionLength: 100 / totalPerimeter, // Player 2 gets 100px
+        health: 3,
+        isEliminated: false,
+        eliminationOrder: null,
       },
       {
         id: "3",
         name: "Player 3",
         color: "#0000FF",
-        sectionStart: 0,
-        sectionLength: 0,
+        sectionStart: (150 + 100) / totalPerimeter, // Starts after player 2
+        sectionLength: 50 / totalPerimeter, // Player 3 gets 50px
+        health: 3,
+        isEliminated: false,
+        eliminationOrder: null,
       },
     ];
 
@@ -170,29 +198,44 @@ describe("calculatePlayerBorderSegments", () => {
     // Should have segments for all 3 players
     expect(result.length).toBe(3);
 
-    // First player starts at the beginning of 'top' side
+    // --- Player 1 Assertions (150px total) ---
+    expect(result[0].playerId).toBe("1");
+    const player1TotalLength = result[0].segments.reduce(
+      (sum, s) => sum + s.length,
+      0,
+    );
+    expect(player1TotalLength).toBeCloseTo(150);
+    // First segment: top, start 0, length 100
     expect(result[0].segments[0].side.name).toBe("top");
     expect(result[0].segments[0].startPosition).toBe(0);
-
-    // First player should take the entire 'top' side of 100px
     expect(result[0].segments[0].length).toBe(100);
+    // Second segment: right, start 0, length 50
+    expect(result[0].segments[1].side.name).toBe("right");
+    expect(result[0].segments[1].startPosition).toBe(0);
+    expect(result[0].segments[1].length).toBe(50);
 
-    // Second player should start at the beginning of 'right' side
-    expect(result[1].segments[0].side.name).toBe("right");
+    // --- Player 2 Assertions (100px total) ---
+    expect(result[1].playerId).toBe("2");
+    const player2TotalLength = result[1].segments.reduce(
+      (sum, s) => sum + s.length,
+      0,
+    );
+    expect(player2TotalLength).toBeCloseTo(100);
+    // First segment: bottom, start 0, length 100 (starts from right end of bottom)
+    expect(result[1].segments[0].side.name).toBe("bottom");
     expect(result[1].segments[0].startPosition).toBe(0);
+    expect(result[1].segments[0].length).toBe(100);
 
-    // Second player should take the entire 'right' side of 50px and part of 'bottom'
-    expect(result[1].segments[0].length).toBe(50);
-    expect(result[1].segments[1].side.name).toBe("bottom");
-    expect(result[1].segments[1].length).toBe(50);
-
-    // Third player should start at position 50 of 'bottom' side
-    expect(result[2].segments[0].side.name).toBe("bottom");
-    expect(result[2].segments[0].startPosition).toBe(50);
-
-    // Third player should take the rest of 'bottom' (50px) and part of 'left' (50px)
+    // --- Player 3 Assertions (50px total) ---
+    expect(result[2].playerId).toBe("3");
+    const player3TotalLength = result[2].segments.reduce(
+      (sum, s) => sum + s.length,
+      0,
+    );
+    expect(player3TotalLength).toBeCloseTo(50);
+    // First segment: left, start 0, length 50 (starts from bottom end of left)
+    expect(result[2].segments[0].side.name).toBe("left");
+    expect(result[2].segments[0].startPosition).toBe(0);
     expect(result[2].segments[0].length).toBe(50);
-    expect(result[2].segments[1].side.name).toBe("left");
-    expect(result[2].segments[1].length).toBe(50);
   });
 });

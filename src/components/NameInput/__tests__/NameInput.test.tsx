@@ -4,6 +4,7 @@ import NameInput from "../NameInput";
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import playerReducer from "../../../store/slices/playerSlice/playerSlice";
+import gameStateReducer from "../../../store/slices/gameStateSlice/gameStateSlice"; // Import gameStateReducer
 
 describe("NameInput", () => {
   // Create a fresh store for each test
@@ -13,6 +14,7 @@ describe("NameInput", () => {
     mockStore = configureStore({
       reducer: {
         players: playerReducer,
+        gameState: gameStateReducer, // Add gameStateReducer
       },
     });
   });
