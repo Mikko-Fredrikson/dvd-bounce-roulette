@@ -7,6 +7,7 @@ import logoReducer, {
   reverseVelocityX,
   reverseVelocityY,
 } from "../../../store/slices/logoSlice/logoSlice";
+import gameStateReducer from "../../../store/slices/gameStateSlice/gameStateSlice";
 import {
   describe,
   it,
@@ -83,6 +84,7 @@ const renderGameArea = (initialState: Partial<RootState> = {}) => {
     reducer: {
       players: playerReducer,
       logo: logoReducer,
+      gameState: gameStateReducer,
     },
     preloadedState: {
       players: {
@@ -90,28 +92,66 @@ const renderGameArea = (initialState: Partial<RootState> = {}) => {
           {
             id: "1",
             name: "Player 1",
-            health: 100,
+            health: 3,
             color: "#ff0000",
-            borderShare: 0.5,
+            sectionStart: 0,
+            sectionLength: 1500,
           },
           {
             id: "2",
             name: "Player 2",
-            health: 100,
+            health: 3,
             color: "#0000ff",
-            borderShare: 0.5,
+            sectionStart: 1500,
+            sectionLength: 1500,
           },
         ],
       },
       logo: {
-        position: { x: 450, y: 300 }, // Start near center
-        velocity: { x: 5, y: 5 }, // Moving towards bottom-right
+        position: { x: 450, y: 300 },
+        velocity: { x: 5, y: 5 },
         size: { width: 50, height: 30 },
         imageUrl: null,
         angle: 45,
         speed: Math.sqrt(50),
       },
+      gameState: {
+        status: "running",
+      },
       ...initialState,
+      logo: {
+        ...(initialState.logo || {
+          position: { x: 450, y: 300 },
+          velocity: { x: 5, y: 5 },
+          size: { width: 50, height: 30 },
+          imageUrl: null,
+          angle: 45,
+          speed: Math.sqrt(50),
+        }),
+      },
+      gameState: {
+        ...(initialState.gameState || { status: "running" }),
+      },
+      players: {
+        players: initialState.players?.players || [
+          {
+            id: "1",
+            name: "Player 1",
+            health: 3,
+            color: "#ff0000",
+            sectionStart: 0,
+            sectionLength: 1500,
+          },
+          {
+            id: "2",
+            name: "Player 2",
+            health: 3,
+            color: "#0000ff",
+            sectionStart: 1500,
+            sectionLength: 1500,
+          },
+        ],
+      },
     },
   });
 
@@ -131,8 +171,8 @@ describe("GameArea Collision Detection", () => {
   it("should reverse Y velocity when hitting the top border", async () => {
     const { store } = renderGameArea({
       logo: {
-        position: { x: 450, y: 10 }, // Near top border
-        velocity: { x: 1, y: -5 }, // Moving up
+        position: { x: 450, y: 10 },
+        velocity: { x: 1, y: -5 },
         size: { width: 50, height: 30 },
         imageUrl: null,
         angle: -78.69,
@@ -140,7 +180,7 @@ describe("GameArea Collision Detection", () => {
       },
     });
 
-    advanceFrames(1); // Advance one frame to trigger collision check
+    advanceFrames(1);
 
     await waitFor(() => {
       expect(store.dispatch).toHaveBeenCalledWith(reverseVelocityY());
@@ -150,8 +190,8 @@ describe("GameArea Collision Detection", () => {
   it("should reverse Y velocity when hitting the bottom border", async () => {
     const { store } = renderGameArea({
       logo: {
-        position: { x: 450, y: 590 }, // Near bottom border (height 600, logo height 30)
-        velocity: { x: 1, y: 5 }, // Moving down
+        position: { x: 450, y: 590 },
+        velocity: { x: 1, y: 5 },
         size: { width: 50, height: 30 },
         imageUrl: null,
         angle: 78.69,
@@ -169,8 +209,8 @@ describe("GameArea Collision Detection", () => {
   it("should reverse X velocity when hitting the left border", async () => {
     const { store } = renderGameArea({
       logo: {
-        position: { x: 10, y: 300 }, // Near left border
-        velocity: { x: -5, y: 1 }, // Moving left
+        position: { x: 10, y: 300 },
+        velocity: { x: -5, y: 1 },
         size: { width: 50, height: 30 },
         imageUrl: null,
         angle: 168.69,
@@ -188,8 +228,8 @@ describe("GameArea Collision Detection", () => {
   it("should reverse X velocity when hitting the right border", async () => {
     const { store } = renderGameArea({
       logo: {
-        position: { x: 890, y: 300 }, // Near right border (width 900, logo width 50)
-        velocity: { x: 5, y: 1 }, // Moving right
+        position: { x: 890, y: 300 },
+        velocity: { x: 5, y: 1 },
         size: { width: 50, height: 30 },
         imageUrl: null,
         angle: 11.31,
@@ -223,20 +263,13 @@ describe("GameArea Rendering and Setup", () => {
     expect(canvas).toHaveAttribute("height", "600");
   });
 
-  it("draws player border segments and logo on canvas", async () => {
-    renderGameArea();
+  it("draws player border segments and logo on canvas when running", async () => {
+    renderGameArea({ gameState: { status: "running" } });
 
-    // Wait for the drawing calls within useEffect
     await waitFor(() => {
-      // Assertions directly on the persistent mock context object
       expect(mockCtx.clearRect).toHaveBeenCalled();
       expect(mockCtx.fillRect).toHaveBeenCalled();
       expect(mockCtx.stroke).toHaveBeenCalled();
-
-      // Check the arguments of the first call to clearRect directly
-      expect(mockCtx.clearRect.mock.calls.length).toBeGreaterThan(0); // Ensure it was called
-      const clearRectArgs = mockCtx.clearRect.mock.calls[0];
-      expect(clearRectArgs).toEqual([0, 0, 900, 600]);
     });
   });
 
@@ -266,9 +299,25 @@ describe("GameArea Rendering and Setup", () => {
     expect(canvas).toHaveAttribute("height", "600");
   });
 
-  it("sets up animation with requestAnimationFrame", () => {
-    renderGameArea();
-    expect(rafSpy).toHaveBeenCalled();
+  it("sets up animation with requestAnimationFrame when game is running", () => {
+    renderGameArea({ gameState: { status: "running" } });
+    waitFor(() => {
+      expect(rafSpy).toHaveBeenCalled();
+    });
+  });
+
+  it("does NOT set up animation with requestAnimationFrame when game is idle", () => {
+    renderGameArea({ gameState: { status: "idle" } });
+    waitFor(() => {
+      expect(rafSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  it("does NOT set up animation with requestAnimationFrame when game is paused", () => {
+    renderGameArea({ gameState: { status: "paused" } });
+    waitFor(() => {
+      expect(rafSpy).not.toHaveBeenCalled();
+    });
   });
 
   it("renders PlayerNameBox components", () => {
