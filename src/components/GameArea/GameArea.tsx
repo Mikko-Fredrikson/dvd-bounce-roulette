@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store";
 import {
   createBorderSides,
@@ -11,6 +11,7 @@ import {
   GameDimensions,
 } from "../../utils/positionUtils/calculatePlayerNamePositions";
 import PlayerNameBox from "../PlayerNameBox/PlayerNameBox";
+import { initializeLogoPosition } from "../../store/slices/logoSlice/logoSlice";
 
 interface GameAreaProps {
   width?: number;
@@ -20,7 +21,7 @@ interface GameAreaProps {
 
 /**
  * GameArea component that maintains a fixed 3:2 aspect ratio regardless of window size
- * Displays player borders and name boxes that rotate counter-clockwise
+ * Displays player borders, name boxes, and a logo that rotates counter-clockwise
  */
 const GameArea: React.FC<GameAreaProps> = ({
   width = 900,
@@ -30,8 +31,10 @@ const GameArea: React.FC<GameAreaProps> = ({
   // Fixed aspect ratio of 3:2 (width:height)
   const aspectRatio = width / height;
 
-  // Get players from Redux store
+  // Get players and logo from Redux store
+  const dispatch = useDispatch();
   const players = useSelector((state: RootState) => state.players.players);
+  const logo = useSelector((state: RootState) => state.logo);
 
   // Animation state
   const [offset, setOffset] = useState(0);
@@ -58,14 +61,54 @@ const GameArea: React.FC<GameAreaProps> = ({
   );
 
   /**
-   * Draws player border segments on canvas
+   * Draws the logo on the canvas
    */
-  const drawPlayerBorders = React.useCallback(
+  const drawLogo = React.useCallback(
+    (ctx: CanvasRenderingContext2D) => {
+      const { position, size, imageUrl } = logo;
+      const centerX = position.x;
+      const centerY = position.y;
+      const drawWidth = size.width;
+      const drawHeight = size.height;
+
+      // TODO: Implement image drawing if imageUrl exists
+      if (imageUrl) {
+        // Placeholder for image drawing logic
+        console.warn("Image drawing not yet implemented.");
+        // Example placeholder drawing
+        ctx.fillStyle = "purple"; // Placeholder color for image
+        ctx.fillRect(
+          centerX - drawWidth / 2,
+          centerY - drawHeight / 2,
+          drawWidth,
+          drawHeight,
+        );
+      } else {
+        // Draw a default rectangle if no image
+        ctx.fillStyle = "blue"; // Default logo color
+        ctx.fillRect(
+          centerX - drawWidth / 2,
+          centerY - drawHeight / 2,
+          drawWidth,
+          drawHeight,
+        );
+      }
+    },
+    [logo],
+  );
+
+  /**
+   * Draws player border segments and the logo on canvas
+   */
+  const drawGameElements = React.useCallback(
     (ctx: CanvasRenderingContext2D) => {
       // Clear the entire canvas before drawing
       ctx.clearRect(0, 0, width, height);
 
-      // Draw for each player
+      // Draw the logo first (so borders appear on top if overlapping)
+      drawLogo(ctx);
+
+      // Draw player borders
       playerBorderSegments.forEach((playerSegment) => {
         const { segments, playerColor } = playerSegment;
 
@@ -100,7 +143,7 @@ const GameArea: React.FC<GameAreaProps> = ({
         });
       });
     },
-    [playerBorderSegments, width, height],
+    [playerBorderSegments, width, height, drawLogo],
   );
 
   // Animation loop to continuously update the offset
@@ -122,6 +165,11 @@ const GameArea: React.FC<GameAreaProps> = ({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    // Initialize logo position to the center of the GameArea
+    if (logo.position.x === 0 && logo.position.y === 0) {
+      dispatch(initializeLogoPosition({ x: width / 2, y: height / 2 }));
+    }
+
     // Start animation loop
     animationRef.current = requestAnimationFrame(animateOffset);
 
@@ -131,9 +179,9 @@ const GameArea: React.FC<GameAreaProps> = ({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [width, height, animateOffset]);
+  }, [width, height, animateOffset, dispatch, logo.position]);
 
-  // Update canvas when player border segments change
+  // Update canvas when player border segments or logo state change
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -141,9 +189,9 @@ const GameArea: React.FC<GameAreaProps> = ({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Draw player border segments with the current offset
-    drawPlayerBorders(ctx);
-  }, [playerBorderSegments, drawPlayerBorders]);
+    // Draw game elements (borders and logo)
+    drawGameElements(ctx);
+  }, [playerBorderSegments, drawGameElements]);
 
   return (
     <div

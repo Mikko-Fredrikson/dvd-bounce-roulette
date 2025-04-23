@@ -1,0 +1,18 @@
+export interface Vector2D {
+  x: number;
+  y: number;
+}
+
+export interface Size {
+  width: number;
+  height: number;
+}
+
+export interface LogoState {
+  position: Vector2D;
+  velocity: Vector2D;
+  size: Size;
+  imageUrl: string | null; // To store the uploaded logo URL
+  angle: number; // Current angle of movement in degrees
+  speed: number; // Magnitude of velocity
+}

@@ -1,9 +1,11 @@
 import { configureStore } from "@reduxjs/toolkit";
 import playerReducer from "./slices/playerSlice/playerSlice";
+import logoReducer from "./slices/logoSlice/logoSlice"; // Import the new reducer
 
 export const store = configureStore({
   reducer: {
     players: playerReducer,
+    logo: logoReducer, // Add the logo reducer
     // Add more slices as they are created
   },
 });
