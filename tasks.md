@@ -57,7 +57,7 @@
 - [x] Transform border segments counterclockwise along the game area border.
 - implement the logo animation.
 
-  - [ ] Implement an oval shape moving on the canvas, which bounces off of borders.
+  - [x] Implement an oval shape moving on the canvas, which bounces off of borders.
 
     - [x] Create a logo state slice for position, velocity, and appearance (Medium)
     - [x] Define logo animation properties (size, speed, default appearance) (Low)

@@ -84,30 +84,26 @@ const GameArea: React.FC<GameAreaProps> = ({
       const { position, size, imageUrl } = logo;
       const centerX = position.x;
       const centerY = position.y;
-      const drawWidth = size.width;
-      const drawHeight = size.height;
+      const radiusX = size.width / 2; // Horizontal radius
+      const radiusY = size.height / 2; // Vertical radius
 
       // TODO: Implement image drawing if imageUrl exists
       if (imageUrl) {
         // Placeholder for image drawing logic
         console.warn("Image drawing not yet implemented.");
-        // Example placeholder drawing
+        // Example placeholder drawing - maybe draw image within ellipse bounds?
         ctx.fillStyle = "purple"; // Placeholder color for image
-        ctx.fillRect(
-          centerX - drawWidth / 2,
-          centerY - drawHeight / 2,
-          drawWidth,
-          drawHeight,
-        );
+        ctx.beginPath();
+        ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
+        ctx.fill();
+        // Or draw the actual image clipped to an ellipse? More complex.
       } else {
-        // Draw a default rectangle if no image
+        // Draw a default ellipse if no image
         ctx.fillStyle = "blue"; // Default logo color
-        ctx.fillRect(
-          centerX - drawWidth / 2,
-          centerY - drawHeight / 2,
-          drawWidth,
-          drawHeight,
-        );
+        ctx.beginPath();
+        // Use ellipse method: ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle)
+        ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
+        ctx.fill();
       }
     },
     [logo],
