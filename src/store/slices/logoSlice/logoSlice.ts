@@ -74,6 +74,13 @@ const logoSlice = createSlice({
     resetLogoPosition: (state) => {
       state.position = state.initialPosition; // Reset to the stored initial position
     },
+    // New reducer to set a random direction
+    randomizeLogoDirection: (state) => {
+      // Generate a random angle between 0 and 360 degrees
+      const randomAngle = Math.random() * 360;
+      state.angle = randomAngle;
+      state.velocity = calculateVelocity(state.angle, state.speed);
+    },
   },
 });
 
@@ -88,6 +95,7 @@ export const {
   reverseVelocityX,
   reverseVelocityY,
   resetLogoPosition, // Export the new action
+  randomizeLogoDirection, // Export the new randomize action
 } = logoSlice.actions;
 
 export default logoSlice.reducer;

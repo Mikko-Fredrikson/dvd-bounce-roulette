@@ -9,13 +9,17 @@ import {
   resetGame,
 } from "../../store/slices/gameStateSlice/gameStateSlice";
 import { resetPlayersHealth } from "../../store/slices/playerSlice/playerSlice"; // Updated import
-import { resetLogoPosition } from "../../store/slices/logoSlice/logoSlice"; // Import resetLogoPosition
+import {
+  resetLogoPosition,
+  randomizeLogoDirection, // Import the new action
+} from "../../store/slices/logoSlice/logoSlice"; // Import resetLogoPosition
 
 const GameControls: React.FC = () => {
   const dispatch = useDispatch();
   const gameStatus = useSelector((state: RootState) => state.gameState.status);
 
   const handleStart = () => {
+    dispatch(randomizeLogoDirection()); // Set random direction first
     dispatch(startGame());
   };
 

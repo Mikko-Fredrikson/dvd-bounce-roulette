@@ -10,6 +10,7 @@ export interface Size {
 
 export interface LogoState {
   position: Vector2D;
+  initialPosition: Vector2D; // Add initial position
   velocity: Vector2D;
   size: Size;
   imageUrl: string | null; // To store the uploaded logo URL
