@@ -2,12 +2,17 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { configureStore, EnhancedStore } from "@reduxjs/toolkit";
 import GameArea from "../GameArea";
-import playerReducer from "../../../store/slices/playerSlice/playerSlice";
+import playerReducer, {
+  decrementPlayerHealth,
+} from "../../../store/slices/playerSlice/playerSlice";
 import logoReducer, {
-  reverseVelocityX,
-  reverseVelocityY,
+  setLogoPosition,
+  setLogoVelocity,
 } from "../../../store/slices/logoSlice/logoSlice";
-import gameStateReducer from "../../../store/slices/gameStateSlice/gameStateSlice";
+import gameStateReducer, {
+  pauseGame,
+} from "../../../store/slices/gameStateSlice/gameStateSlice";
+import settingsReducer from "../../../store/slices/settingsSlice/settingsSlice";
 import {
   describe,
   it,
@@ -16,6 +21,7 @@ import {
   beforeEach,
   Mock,
   SpyInstance,
+  afterEach,
 } from "vitest";
 import { RootState } from "../../../store"; // Import RootState
 
@@ -85,25 +91,28 @@ const renderGameArea = (initialState: Partial<RootState> = {}) => {
       players: playerReducer,
       logo: logoReducer,
       gameState: gameStateReducer,
+      settings: settingsReducer,
     },
     preloadedState: {
       players: {
         players: [
           {
-            id: "1",
+            id: "p1", // Use consistent IDs
             name: "Player 1",
             health: 3,
             color: "#ff0000",
             sectionStart: 0,
             sectionLength: 1500,
+            isEliminated: false,
           },
           {
-            id: "2",
+            id: "p2", // Use consistent IDs
             name: "Player 2",
             health: 3,
             color: "#0000ff",
             sectionStart: 1500,
             sectionLength: 1500,
+            isEliminated: false,
           },
         ],
       },
@@ -118,39 +127,50 @@ const renderGameArea = (initialState: Partial<RootState> = {}) => {
       gameState: {
         status: "running",
       },
+      settings: { angleVariance: 10, playerHealth: 3, customLogo: null },
       ...initialState,
+      // Ensure deep merging for nested states
       logo: {
-        ...(initialState.logo || {
-          position: { x: 450, y: 300 },
-          velocity: { x: 5, y: 5 },
-          size: { width: 50, height: 30 },
-          imageUrl: null,
-          angle: 45,
-          speed: Math.sqrt(50),
-        }),
+        position: { x: 450, y: 300 },
+        velocity: { x: 5, y: 5 },
+        size: { width: 50, height: 30 },
+        imageUrl: null,
+        angle: 45,
+        speed: Math.sqrt(50),
+        ...(initialState.logo || {}),
       },
       gameState: {
-        ...(initialState.gameState || { status: "running" }),
+        status: "running",
+        ...(initialState.gameState || {}),
       },
       players: {
-        players: initialState.players?.players || [
+        players: [
           {
-            id: "1",
+            id: "p1",
             name: "Player 1",
             health: 3,
             color: "#ff0000",
             sectionStart: 0,
             sectionLength: 1500,
+            isEliminated: false,
           },
           {
-            id: "2",
+            id: "p2",
             name: "Player 2",
             health: 3,
             color: "#0000ff",
             sectionStart: 1500,
             sectionLength: 1500,
+            isEliminated: false,
           },
         ],
+        ...(initialState.players || {}),
+      },
+      settings: {
+        angleVariance: 10,
+        playerHealth: 3,
+        customLogo: null,
+        ...(initialState.settings || {}),
       },
     },
   });
@@ -167,80 +187,190 @@ const renderGameArea = (initialState: Partial<RootState> = {}) => {
   return { ...utils, store };
 };
 
-describe("GameArea Collision Detection", () => {
-  it("should reverse Y velocity when hitting the top border", async () => {
+describe("GameArea Collision Detection with Angle Variance", () => {
+  let mathRandomSpy: SpyInstance;
+
+  beforeEach(() => {
+    // Mock Math.random to return a predictable value (e.g., 0.75 for positive deviation)
+    mathRandomSpy = vi.spyOn(Math, "random").mockReturnValue(0.75);
+  });
+
+  afterEach(() => {
+    mathRandomSpy.mockRestore(); // Restore original Math.random
+  });
+
+  it("should dispatch setLogoVelocity with varied angle after top border collision", async () => {
+    const initialVelocity = { x: 1, y: -5 };
+    const angleVariance = 20; // degrees
     const { store } = renderGameArea({
       logo: {
-        position: { x: 450, y: 10 },
-        velocity: { x: 1, y: -5 },
+        position: { x: 450, y: 10 }, // Near top border
+        velocity: initialVelocity,
         size: { width: 50, height: 30 },
         imageUrl: null,
-        angle: -78.69,
-        speed: Math.sqrt(26),
+        angle: 0, // Angle/speed not directly used in test logic here
+        speed: 0,
       },
+      settings: { angleVariance, playerHealth: 3, customLogo: null },
     });
 
     advanceFrames(1);
 
     await waitFor(() => {
-      expect(store.dispatch).toHaveBeenCalledWith(reverseVelocityY());
+      // Check that setLogoPosition was called (always happens)
+      expect(store.dispatch).toHaveBeenCalledWith(
+        expect.objectContaining({ type: setLogoPosition.type }),
+      );
+
+      // Check that setLogoVelocity was called due to collision + variance
+      expect(store.dispatch).toHaveBeenCalledWith(
+        expect.objectContaining({ type: setLogoVelocity.type }),
+      );
+
+      // Verify the payload of setLogoVelocity
+      const setVelocityAction = (store.dispatch as Mock).mock.calls.find(
+        (call) => call[0].type === setLogoVelocity.type,
+      );
+      expect(setVelocityAction).toBeDefined();
+
+      const expectedVy = Math.abs(initialVelocity.y); // Base reversed velocity
+      const expectedVx = initialVelocity.x;
+      // Calculate expected velocity after variance (0.75 -> positive deviation)
+      // Deviation = (0.75 - 0.5) * 20 = 5 degrees = 0.087 radians
+      const deviationRadians = 5 * (Math.PI / 180);
+      const cosTheta = Math.cos(deviationRadians);
+      const sinTheta = Math.sin(deviationRadians);
+      const finalVx = expectedVx * cosTheta - expectedVy * sinTheta;
+      const finalVy = expectedVx * sinTheta + expectedVy * cosTheta;
+
+      expect(setVelocityAction[0].payload.x).toBeCloseTo(finalVx);
+      expect(setVelocityAction[0].payload.y).toBeCloseTo(finalVy);
     });
   });
 
-  it("should reverse Y velocity when hitting the bottom border", async () => {
+  it("should dispatch setLogoVelocity with varied angle after left border collision", async () => {
+    const initialVelocity = { x: -5, y: 1 };
+    const angleVariance = 30; // degrees
     const { store } = renderGameArea({
       logo: {
-        position: { x: 450, y: 590 },
-        velocity: { x: 1, y: 5 },
+        position: { x: 10, y: 300 }, // Near left border
+        velocity: initialVelocity,
         size: { width: 50, height: 30 },
         imageUrl: null,
-        angle: 78.69,
-        speed: Math.sqrt(26),
+        angle: 0,
+        speed: 0,
       },
+      settings: { angleVariance, playerHealth: 3, customLogo: null },
     });
 
     advanceFrames(1);
 
     await waitFor(() => {
-      expect(store.dispatch).toHaveBeenCalledWith(reverseVelocityY());
+      expect(store.dispatch).toHaveBeenCalledWith(
+        expect.objectContaining({ type: setLogoPosition.type }),
+      );
+      expect(store.dispatch).toHaveBeenCalledWith(
+        expect.objectContaining({ type: setLogoVelocity.type }),
+      );
+
+      const setVelocityAction = (store.dispatch as Mock).mock.calls.find(
+        (call) => call[0].type === setLogoVelocity.type,
+      );
+      expect(setVelocityAction).toBeDefined();
+
+      const expectedVx = Math.abs(initialVelocity.x); // Base reversed velocity
+      const expectedVy = initialVelocity.y;
+      // Calculate expected velocity after variance (0.75 -> positive deviation)
+      // Deviation = (0.75 - 0.5) * 30 = 7.5 degrees = 0.131 radians
+      const deviationRadians = 7.5 * (Math.PI / 180);
+      const cosTheta = Math.cos(deviationRadians);
+      const sinTheta = Math.sin(deviationRadians);
+      const finalVx = expectedVx * cosTheta - expectedVy * sinTheta;
+      const finalVy = expectedVx * sinTheta + expectedVy * cosTheta;
+
+      expect(setVelocityAction[0].payload.x).toBeCloseTo(finalVx);
+      expect(setVelocityAction[0].payload.y).toBeCloseTo(finalVy);
     });
   });
 
-  it("should reverse X velocity when hitting the left border", async () => {
+  it("should dispatch setLogoVelocity with only reversed velocity if angleVariance is 0", async () => {
+    const initialVelocity = { x: 1, y: -5 };
     const { store } = renderGameArea({
       logo: {
-        position: { x: 10, y: 300 },
-        velocity: { x: -5, y: 1 },
+        position: { x: 450, y: 10 }, // Near top border
+        velocity: initialVelocity,
         size: { width: 50, height: 30 },
-        imageUrl: null,
-        angle: 168.69,
-        speed: Math.sqrt(26),
       },
+      settings: { angleVariance: 0 }, // Variance is zero
     });
 
     advanceFrames(1);
 
     await waitFor(() => {
-      expect(store.dispatch).toHaveBeenCalledWith(reverseVelocityX());
+      // Position should still update
+      expect(store.dispatch).toHaveBeenCalledWith(
+        expect.objectContaining({ type: setLogoPosition.type }),
+      );
+
+      // Velocity should be updated with the reversed value
+      const setVelocityAction = (store.dispatch as Mock).mock.calls.find(
+        (call) => call[0].type === setLogoVelocity.type,
+      );
+      expect(setVelocityAction).toBeDefined();
+      expect(setVelocityAction[0].payload.x).toBeCloseTo(initialVelocity.x); // X unchanged
+      expect(setVelocityAction[0].payload.y).toBeCloseTo(-initialVelocity.y); // Y reversed
     });
   });
 
-  it("should reverse X velocity when hitting the right border", async () => {
+  it("should dispatch decrementPlayerHealth for player p1 when hitting right border segment", async () => {
     const { store } = renderGameArea({
       logo: {
-        position: { x: 890, y: 300 },
+        position: { x: 890, y: 300 }, // Near right border, middle height
         velocity: { x: 5, y: 1 },
         size: { width: 50, height: 30 },
-        imageUrl: null,
-        angle: 11.31,
-        speed: Math.sqrt(26),
       },
+      settings: { angleVariance: 0 }, // No variance for simplicity
+      // Default players: p1 owns 0-1500 (includes right border 900-1500)
     });
 
     advanceFrames(1);
 
     await waitFor(() => {
-      expect(store.dispatch).toHaveBeenCalledWith(reverseVelocityX());
+      // Check that decrementPlayerHealth was called for the correct player (p1)
+      expect(store.dispatch).toHaveBeenCalledWith(decrementPlayerHealth("p1"));
+    });
+  });
+
+  it("should pause game when only one player remains", async () => {
+    const { store } = renderGameArea({
+      players: {
+        players: [
+          {
+            id: "p1",
+            name: "P1",
+            health: 1,
+            color: "red",
+            sectionStart: 0,
+            sectionLength: 1500,
+            isEliminated: false,
+          },
+          {
+            id: "p2",
+            name: "P2",
+            health: 0,
+            color: "blue",
+            sectionStart: 1500,
+            sectionLength: 1500,
+            isEliminated: true,
+          }, // P2 already eliminated
+        ],
+      },
+      gameState: { status: "running" },
+    });
+
+    // No need to advance frames, the check happens in useEffect
+    await waitFor(() => {
+      expect(store.dispatch).toHaveBeenCalledWith(pauseGame());
     });
   });
 });

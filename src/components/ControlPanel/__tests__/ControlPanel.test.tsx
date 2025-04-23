@@ -10,24 +10,33 @@ import gameStateReducer, {
   resumeGame,
   resetGame,
 } from "../../../store/slices/gameStateSlice/gameStateSlice";
+import settingsReducer, {
+  setAngleVariance,
+} from "../../../store/slices/settingsSlice/settingsSlice";
 import { RootState } from "../../../store";
 
-// Create mock store for testing, now including gameState
+// Create mock store for testing, now including gameState and settings
 const createMockStore = (initialState: Partial<RootState> = {}) => {
   return configureStore({
     reducer: {
       players: playerReducer,
       gameState: gameStateReducer,
+      settings: settingsReducer,
     },
     preloadedState: {
-      gameState: { status: "idle" },
-      players: { players: [] },
       ...initialState,
       gameState: {
         ...(initialState.gameState || { status: "idle" }),
       },
       players: {
         players: initialState.players?.players || [],
+      },
+      settings: {
+        ...(initialState.settings || {
+          angleVariance: 10,
+          playerHealth: 3,
+          customLogo: null,
+        }),
       },
     },
   });
@@ -94,6 +103,74 @@ describe("ControlPanel", () => {
 
     expect(settingsTab).toHaveAttribute("aria-selected", "true");
     expect(playersTab).toHaveAttribute("aria-selected", "false");
+  });
+});
+
+describe("ControlPanel Settings Tab", () => {
+  it("should render angle variance slider when Settings tab is active", () => {
+    const store = createMockStore();
+    render(
+      <Provider store={store}>
+        <ControlPanel />
+      </Provider>,
+    );
+
+    const settingsTab = screen.getByRole("tab", { name: /settings/i });
+    fireEvent.click(settingsTab);
+
+    const sliderLabel = screen.getByLabelText(/angle variance/i);
+    const sliderInput = screen.getByRole("slider", { name: /angle variance/i });
+    const valueDisplay = screen.getByText(/10°/i);
+
+    expect(sliderLabel).toBeInTheDocument();
+    expect(sliderInput).toBeInTheDocument();
+    expect(sliderInput).toHaveValue("10");
+    expect(valueDisplay).toBeInTheDocument();
+    expect(
+      screen.getByText(/Max angle deviation on bounce \(±5°\)/i),
+    ).toBeInTheDocument();
+  });
+
+  it("should dispatch setAngleVariance action when slider value changes", () => {
+    const store = createMockStore();
+    vi.spyOn(store, "dispatch");
+    render(
+      <Provider store={store}>
+        <ControlPanel />
+      </Provider>,
+    );
+
+    const settingsTab = screen.getByRole("tab", { name: /settings/i });
+    fireEvent.click(settingsTab);
+
+    const sliderInput = screen.getByRole("slider", { name: /angle variance/i });
+    fireEvent.change(sliderInput, { target: { value: "20" } });
+
+    expect(store.dispatch).toHaveBeenCalledWith(setAngleVariance(20));
+  });
+
+  it("should display the updated angle variance value", () => {
+    const store = createMockStore({
+      settings: { angleVariance: 30, playerHealth: 3, customLogo: null },
+    });
+    render(
+      <Provider store={store}>
+        <ControlPanel />
+      </Provider>,
+    );
+
+    const settingsTab = screen.getByRole("tab", { name: /settings/i });
+    fireEvent.click(settingsTab);
+
+    const sliderInput = screen.getByRole("slider", { name: /angle variance/i });
+    const valueDisplay = screen.getByText(/30°/i);
+    const helpText = screen.getByText(
+      /Max angle deviation on bounce \(±15°\)/i,
+    );
+
+    expect(sliderInput).toHaveValue("30");
+    expect(valueDisplay).toBeInTheDocument();
+    expect(helpText).toBeInTheDocument();
   });
 });
 

@@ -16,10 +16,11 @@ import {
   setLogoPosition,
   reverseVelocityX,
   reverseVelocityY,
+  setLogoVelocity, // Import setLogoVelocity
 } from "../../store/slices/logoSlice/logoSlice";
 import { decrementPlayerHealth } from "../../store/slices/playerSlice/playerSlice";
 import { PlayerBorderSegments } from "../../utils/borderUtils/types";
-import { pauseGame } from "../../store/slices/gameStateSlice/gameStateSlice"; // Import pauseGame
+import { pauseGame } from "../../store/slices/gameStateSlice/gameStateSlice";
 
 interface GameAreaProps {
   width?: number;
@@ -44,6 +45,9 @@ const GameArea: React.FC<GameAreaProps> = ({
   const allPlayers = useSelector((state: RootState) => state.players.players);
   const logo = useSelector((state: RootState) => state.logo);
   const gameStatus = useSelector((state: RootState) => state.gameState.status);
+  const angleVariance = useSelector(
+    (state: RootState) => state.settings.angleVariance,
+  ); // Get angle variance
 
   // Filter out eliminated players
   const activePlayers = allPlayers.filter((player) => !player.isEliminated);
@@ -173,9 +177,13 @@ const GameArea: React.FC<GameAreaProps> = ({
     // Update border offset
     setOffset((prevOffset) => (prevOffset + animationSpeed) % perimeter);
 
-    // Calculate next logo position
-    let nextX = logo.position.x + logo.velocity.x;
-    let nextY = logo.position.y + logo.velocity.y;
+    // Current velocity
+    let vx = logo.velocity.x;
+    let vy = logo.velocity.y;
+
+    // Calculate next logo position based on current velocity
+    let nextX = logo.position.x + vx;
+    let nextY = logo.position.y + vy;
 
     // Collision detection with game area borders
     const logoHalfWidth = logo.size.width / 2;
@@ -183,31 +191,55 @@ const GameArea: React.FC<GameAreaProps> = ({
 
     let collisionSide: "top" | "right" | "bottom" | "left" | null = null;
     let collisionPoint: number | null = null;
+    let collided = false;
 
     // Check horizontal collision (left/right walls)
     if (nextX - logoHalfWidth <= 0) {
-      dispatch(reverseVelocityX());
+      vx = Math.abs(vx); // Reverse horizontal velocity
       nextX = logoHalfWidth; // Prevent sticking
       collisionSide = "left";
-      collisionPoint = nextY; // Collision point along the vertical axis
+      collisionPoint = nextY;
+      collided = true;
     } else if (nextX + logoHalfWidth >= width) {
-      dispatch(reverseVelocityX());
+      vx = -Math.abs(vx); // Reverse horizontal velocity
       nextX = width - logoHalfWidth; // Prevent sticking
       collisionSide = "right";
-      collisionPoint = nextY; // Collision point along the vertical axis
+      collisionPoint = nextY;
+      collided = true;
     }
 
     // Check vertical collision (top/bottom walls)
     if (nextY - logoHalfHeight <= 0) {
-      dispatch(reverseVelocityY());
+      vy = Math.abs(vy); // Reverse vertical velocity
       nextY = logoHalfHeight; // Prevent sticking
       collisionSide = "top";
-      collisionPoint = nextX; // Collision point along the horizontal axis
+      // If already collided horizontally, keep that side info, but update point
+      collisionPoint = collisionPoint === null ? nextX : collisionPoint;
+      collided = true;
     } else if (nextY + logoHalfHeight >= height) {
-      dispatch(reverseVelocityY());
+      vy = -Math.abs(vy); // Reverse vertical velocity
       nextY = height - logoHalfHeight; // Prevent sticking
       collisionSide = "bottom";
-      collisionPoint = nextX; // Collision point along the horizontal axis
+      // If already collided horizontally, keep that side info, but update point
+      collisionPoint = collisionPoint === null ? nextX : collisionPoint;
+      collided = true;
+    }
+
+    // Apply angle variance if a collision occurred
+    if (collided && angleVariance > 0) {
+      // Calculate random deviation in degrees (-variance/2 to +variance/2)
+      const deviationDegrees = (Math.random() - 0.5) * angleVariance;
+      // Convert deviation to radians
+      const deviationRadians = deviationDegrees * (Math.PI / 180);
+
+      // Rotate the velocity vector (vx, vy)
+      const cosTheta = Math.cos(deviationRadians);
+      const sinTheta = Math.sin(deviationRadians);
+      const newVx = vx * cosTheta - vy * sinTheta;
+      const newVy = vx * sinTheta + vy * cosTheta;
+
+      vx = newVx;
+      vy = newVy;
     }
 
     // If a collision occurred, find the player segment hit
@@ -254,13 +286,12 @@ const GameArea: React.FC<GameAreaProps> = ({
       }
     }
 
-    // Update logo position with potentially adjusted values
-    dispatch(
-      setLogoPosition({
-        x: nextX,
-        y: nextY,
-      }),
-    );
+    // Update logo position and velocity
+    dispatch(setLogoPosition({ x: nextX, y: nextY }));
+    // Only update velocity if it changed (collision or variance applied)
+    if (vx !== logo.velocity.x || vy !== logo.velocity.y) {
+      dispatch(setLogoVelocity({ x: vx, y: vy }));
+    }
 
     // Request next frame ONLY if still running
     if (gameStatus === "running") {
@@ -278,6 +309,7 @@ const GameArea: React.FC<GameAreaProps> = ({
     playerBorderSegments,
     activePlayers,
     gameStatus,
+    angleVariance, // Add angleVariance to dependency array
   ]);
 
   // Effect to pause the game when only one player remains
