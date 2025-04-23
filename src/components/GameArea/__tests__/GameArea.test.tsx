@@ -1,10 +1,22 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { Provider } from "react-redux";
-import { configureStore } from "@reduxjs/toolkit";
+import { configureStore, EnhancedStore } from "@reduxjs/toolkit";
 import GameArea from "../GameArea";
 import playerReducer from "../../../store/slices/playerSlice/playerSlice";
-import logoReducer from "../../../store/slices/logoSlice/logoSlice";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import logoReducer, {
+  reverseVelocityX,
+  reverseVelocityY,
+} from "../../../store/slices/logoSlice/logoSlice";
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+  Mock,
+  SpyInstance,
+} from "vitest";
+import { RootState } from "../../../store"; // Import RootState
 
 // Mock the PlayerNameBox component
 vi.mock("../../PlayerNameBox/PlayerNameBox", () => ({
@@ -15,7 +27,6 @@ vi.mock("../../PlayerNameBox/PlayerNameBox", () => ({
   ),
 }));
 
-// Define the mock context structure outside beforeEach so it persists
 const mockCtx = {
   clearRect: vi.fn(),
   beginPath: vi.fn(),
@@ -25,18 +36,49 @@ const mockCtx = {
   fillRect: vi.fn(),
 };
 
-// Mock requestAnimationFrame and cancelAnimationFrame, and setup canvas mock
+// Mock requestAnimationFrame and cancelAnimationFrame for controlling animation loop
+let frameId = 0;
+const frameCallbacks: Map<number, FrameRequestCallback> = new Map();
+
+vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+  const id = ++frameId;
+  frameCallbacks.set(id, callback);
+  return id;
+});
+
+vi.stubGlobal("cancelAnimationFrame", (id: number) => {
+  frameCallbacks.delete(id);
+});
+
+// Helper to advance animation frames
+const advanceFrames = (count: number) => {
+  for (let i = 0; i < count; i++) {
+    const callbacksToRun = Array.from(frameCallbacks.entries());
+    frameCallbacks.clear(); // Clear before running to handle cancellations within callbacks
+    callbacksToRun.forEach(([id, cb]) => {
+      cb(performance.now());
+    });
+  }
+};
+
+// Spy instance variable
+let rafSpy: SpyInstance;
+
 beforeEach(() => {
-  vi.stubGlobal("requestAnimationFrame", vi.fn());
-  vi.stubGlobal("cancelAnimationFrame", vi.fn());
-  // Reset mocks before each test
+  frameId = 0;
+  frameCallbacks.clear();
   vi.clearAllMocks();
-  // Mock getContext to return the persistent mock object
   HTMLCanvasElement.prototype.getContext = vi.fn(() => mockCtx);
+  // Restore any potentially spied-on global functions before re-spying
+  if (rafSpy) {
+    rafSpy.mockRestore();
+  }
+  // Spy on the *original* window.requestAnimationFrame for the specific test that needs it
+  rafSpy = vi.spyOn(window, "requestAnimationFrame");
 });
 
 // Helper function to render GameArea with Redux Provider
-const renderGameArea = (initialState = {}) => {
+const renderGameArea = (initialState: Partial<RootState> = {}) => {
   const store = configureStore({
     reducer: {
       players: playerReducer,
@@ -62,25 +104,108 @@ const renderGameArea = (initialState = {}) => {
         ],
       },
       logo: {
-        position: { x: 450, y: 300 },
-        velocity: { x: 1, y: 1 },
+        position: { x: 450, y: 300 }, // Start near center
+        velocity: { x: 5, y: 5 }, // Moving towards bottom-right
         size: { width: 50, height: 30 },
         imageUrl: null,
         angle: 45,
-        speed: Math.sqrt(2),
+        speed: Math.sqrt(50),
       },
       ...initialState,
     },
   });
 
-  return render(
+  // Spy on store.dispatch
+  vi.spyOn(store, "dispatch");
+
+  const utils = render(
     <Provider store={store}>
       <GameArea width={900} height={600} />
     </Provider>,
   );
+
+  return { ...utils, store };
 };
 
-describe("GameArea", () => {
+describe("GameArea Collision Detection", () => {
+  it("should reverse Y velocity when hitting the top border", async () => {
+    const { store } = renderGameArea({
+      logo: {
+        position: { x: 450, y: 10 }, // Near top border
+        velocity: { x: 1, y: -5 }, // Moving up
+        size: { width: 50, height: 30 },
+        imageUrl: null,
+        angle: -78.69,
+        speed: Math.sqrt(26),
+      },
+    });
+
+    advanceFrames(1); // Advance one frame to trigger collision check
+
+    await waitFor(() => {
+      expect(store.dispatch).toHaveBeenCalledWith(reverseVelocityY());
+    });
+  });
+
+  it("should reverse Y velocity when hitting the bottom border", async () => {
+    const { store } = renderGameArea({
+      logo: {
+        position: { x: 450, y: 590 }, // Near bottom border (height 600, logo height 30)
+        velocity: { x: 1, y: 5 }, // Moving down
+        size: { width: 50, height: 30 },
+        imageUrl: null,
+        angle: 78.69,
+        speed: Math.sqrt(26),
+      },
+    });
+
+    advanceFrames(1);
+
+    await waitFor(() => {
+      expect(store.dispatch).toHaveBeenCalledWith(reverseVelocityY());
+    });
+  });
+
+  it("should reverse X velocity when hitting the left border", async () => {
+    const { store } = renderGameArea({
+      logo: {
+        position: { x: 10, y: 300 }, // Near left border
+        velocity: { x: -5, y: 1 }, // Moving left
+        size: { width: 50, height: 30 },
+        imageUrl: null,
+        angle: 168.69,
+        speed: Math.sqrt(26),
+      },
+    });
+
+    advanceFrames(1);
+
+    await waitFor(() => {
+      expect(store.dispatch).toHaveBeenCalledWith(reverseVelocityX());
+    });
+  });
+
+  it("should reverse X velocity when hitting the right border", async () => {
+    const { store } = renderGameArea({
+      logo: {
+        position: { x: 890, y: 300 }, // Near right border (width 900, logo width 50)
+        velocity: { x: 5, y: 1 }, // Moving right
+        size: { width: 50, height: 30 },
+        imageUrl: null,
+        angle: 11.31,
+        speed: Math.sqrt(26),
+      },
+    });
+
+    advanceFrames(1);
+
+    await waitFor(() => {
+      expect(store.dispatch).toHaveBeenCalledWith(reverseVelocityX());
+    });
+  });
+});
+
+describe("GameArea Rendering and Setup", () => {
   it("renders game area with correct aspect ratio", () => {
     renderGameArea();
     const gameArea = screen.getByTestId("game-area");
@@ -143,7 +268,7 @@ describe("GameArea", () => {
 
   it("sets up animation with requestAnimationFrame", () => {
     renderGameArea();
-    expect(requestAnimationFrame).toHaveBeenCalled();
+    expect(rafSpy).toHaveBeenCalled();
   });
 
   it("renders PlayerNameBox components", () => {

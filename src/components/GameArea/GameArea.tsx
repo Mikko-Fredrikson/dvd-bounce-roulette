@@ -14,6 +14,8 @@ import PlayerNameBox from "../PlayerNameBox/PlayerNameBox";
 import {
   initializeLogoPosition,
   setLogoPosition,
+  reverseVelocityX,
+  reverseVelocityY,
 } from "../../store/slices/logoSlice/logoSlice";
 
 interface GameAreaProps {
@@ -154,18 +156,44 @@ const GameArea: React.FC<GameAreaProps> = ({
     // Update border offset
     setOffset((prevOffset) => (prevOffset + animationSpeed) % perimeter);
 
-    // Update logo position based on its velocity
-    // Note: Collision detection will be added later
+    // Calculate next logo position
+    let nextX = logo.position.x + logo.velocity.x;
+    let nextY = logo.position.y + logo.velocity.y;
+
+    // Collision detection with game area borders
+    const logoHalfWidth = logo.size.width / 2;
+    const logoHalfHeight = logo.size.height / 2;
+
+    // Check horizontal collision (left/right walls)
+    if (nextX - logoHalfWidth <= 0 || nextX + logoHalfWidth >= width) {
+      dispatch(reverseVelocityX());
+    }
+
+    // Check vertical collision (top/bottom walls)
+    if (nextY - logoHalfHeight <= 0 || nextY + logoHalfHeight >= height) {
+      dispatch(reverseVelocityY());
+    }
+
+    // Update logo position
     dispatch(
       setLogoPosition({
-        x: logo.position.x + logo.velocity.x,
-        y: logo.position.y + logo.velocity.y,
+        x: nextX,
+        y: nextY,
       }),
     );
 
     // Request next frame
     animationRef.current = requestAnimationFrame(animate);
-  }, [animationSpeed, perimeter, dispatch, logo.position, logo.velocity]);
+  }, [
+    animationSpeed,
+    perimeter,
+    dispatch,
+    logo.position,
+    logo.velocity,
+    logo.size,
+    width,
+    height,
+  ]);
 
   // Setup canvas context and start animation
   useEffect(() => {
@@ -186,6 +214,9 @@ const GameArea: React.FC<GameAreaProps> = ({
     }
 
     // Start the combined animation loop
+    if (animationRef.current !== null) {
+      cancelAnimationFrame(animationRef.current);
+    }
     animationRef.current = requestAnimationFrame(animate);
 
     // Cleanup animation loop on unmount
@@ -194,7 +225,18 @@ const GameArea: React.FC<GameAreaProps> = ({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [width, height, animate, dispatch, logo.position.x, logo.position.y]);
+  }, [
+    width,
+    height,
+    animate,
+    dispatch,
+    logo.position.x,
+    logo.position.y,
+    logo.velocity.x,
+    logo.velocity.y,
+    logo.size.width,
+    logo.size.height,
+  ]);
 
   // Update canvas when player border segments or logo state change
   useEffect(() => {
@@ -206,7 +248,7 @@ const GameArea: React.FC<GameAreaProps> = ({
 
     // Draw game elements (borders and logo)
     drawGameElements(ctx);
-  }, [playerBorderSegments, drawGameElements]);
+  }, [playerBorderSegments, drawGameElements, logo]);
 
   return (
     <div
