@@ -59,14 +59,14 @@
     - [x] Animation loop
       - [x] Separate animation loop from animated border segments. (Now combined)
       - [x] use the animation loop for BOTH border segments and logo animation.
-    - [ ] Handle collision with gameArea borders.
-      - [ ] Define logo boundaries based on its current position and dimensions (e.g., top, bottom, left, right edges).
-      - [ ] Check if the logo's top edge hits or exceeds the top border of the game area.
-      - [ ] Check if the logo's bottom edge hits or exceeds the bottom border of the game area.
-      - [ ] Check if the logo's left edge hits or exceeds the left border of the game area.
-      - [ ] Check if the logo's right edge hits or exceeds the right border of the game area.
-      - [ ] If a collision with a horizontal border (top/bottom) is detected, reverse the vertical component of the logo's velocity.
-      - [ ] If a collision with a vertical border (left/right) is detected, reverse the horizontal component of the logo's velocity.
+    - [x] Handle collision with gameArea borders.
+      - [x] Define logo boundaries based on its current position and dimensions (e.g., top, bottom, left, right edges).
+      - [x] Check if the logo's top edge hits or exceeds the top border of the game area.
+      - [x] Check if the logo's bottom edge hits or exceeds the bottom border of the game area.
+      - [x] Check if the logo's left edge hits or exceeds the left border of the game area.
+      - [x] Check if the logo's right edge hits or exceeds the right border of the game area.
+      - [x] If a collision with a horizontal border (top/bottom) is detected, reverse the vertical component of the logo's velocity.
+      - [x] If a collision with a vertical border (left/right) is detected, reverse the horizontal component of the logo's velocity.
       - [ ] Optional: Add angle variance logic upon collision based on settings (may depend on settings slice implementation).
       - [ ] Ensure collision detection accounts for potential high speeds (preventing the logo from passing through the border between frames).
 
