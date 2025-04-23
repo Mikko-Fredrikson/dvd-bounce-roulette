@@ -19,7 +19,6 @@ import {
 } from "../../store/slices/logoSlice/logoSlice";
 import { decrementPlayerHealth } from "../../store/slices/playerSlice/playerSlice";
 import { PlayerBorderSegments } from "../../utils/borderUtils/types";
-import { GameStatus } from "../../store/slices/gameStateSlice/types";
 
 interface GameAreaProps {
   width?: number;

@@ -5,7 +5,6 @@ import {
   Player,
   AddPlayerPayload,
   UpdatePlayerNamePayload,
-  SetPlayerBorderSegmentsPayload,
 } from "./types";
 import { generateUniqueColors } from "../../../utils/colorUtils";
 
@@ -14,6 +13,12 @@ let usedColors: { [key: string]: string } = {};
 
 export const initialState: PlayerState = {
   players: [],
+};
+
+// Helper to find the next elimination order number
+const getNextEliminationOrder = (players: Player[]): number => {
+  const eliminatedPlayers = players.filter((p) => p.isEliminated);
+  return eliminatedPlayers.length;
 };
 
 export const playerSlice = createSlice({
@@ -34,6 +39,7 @@ export const playerSlice = createSlice({
         sectionStart: 0,
         sectionLength: 0,
         isEliminated: false,
+        eliminationOrder: null, // Initialize eliminationOrder
       };
 
       state.players.push(newPlayer);
@@ -74,6 +80,18 @@ export const playerSlice = createSlice({
           player.sectionLength = lengthPerPlayer;
         });
       }
+
+      // Recalculate elimination order if an eliminated player is removed (edge case)
+      const remainingPlayers = state.players;
+      const eliminatedSorted = remainingPlayers
+        .filter((p) => p.isEliminated)
+        .sort(
+          (a, b) =>
+            (a.eliminationOrder ?? Infinity) - (b.eliminationOrder ?? Infinity),
+        );
+      eliminatedSorted.forEach((p, index) => {
+        p.eliminationOrder = index + 1;
+      });
     },
 
     updatePlayerName: (
@@ -109,6 +127,8 @@ export const playerSlice = createSlice({
 
         if (player.health === 0) {
           player.isEliminated = true;
+          // Assign the next elimination order number
+          player.eliminationOrder = getNextEliminationOrder(state.players);
           const eliminatedPlayer = player;
           const eliminatedLength = eliminatedPlayer.sectionLength;
           eliminatedPlayer.sectionLength = 0; // Set eliminated player length to 0
@@ -190,6 +210,7 @@ export const playerSlice = createSlice({
       state.players.forEach((player) => {
         player.health = 3;
         player.isEliminated = false;
+        player.eliminationOrder = null; // Reset elimination order
       });
 
       const numPlayers = state.players.length;
