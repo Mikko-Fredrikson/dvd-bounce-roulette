@@ -80,10 +80,10 @@
     - [x] Dispatch an action to reduce the health of the identified player.
       - [x] Refer to the player's state using their assigned ID or name.
     - [ ] Check if the player's health has reached zero after the hit.
-    - [ ] If health is zero, trigger player elimination logic.
-      - [ ] Remove the player's border segment(s).
-      - [ ] Recalculate and redistribute the freed border space to adjacent players (refer to game rules in `game-document.md`).
-      - [ ] Update the player list/state.
+    - [x] If health is zero, trigger player elimination logic.
+      - [x] Remove the player's border segment(s).
+      - [x] Recalculate and redistribute the freed border space to adjacent players (refer to game rules in `game-document.md`).
+      - [x] Update the player list/state.
     - [ ] Check for win conditions (e.g., only one player remaining).
 
   - [ ] Integrate with game mechanics.
