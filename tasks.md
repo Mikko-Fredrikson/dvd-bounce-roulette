@@ -56,9 +56,9 @@
     - [x] Create a logo state slice for position, velocity, and appearance (Medium)
     - [x] Define logo animation properties (size, speed, default appearance) (Low)
     - [x] Draw logo centered in gameArea
-    - [ ] Animation loop
-      - [ ] Separate animation loop from animated border segments.
-      - [ ] use the animation loop for BOTH border segments and logo animation.
+    - [x] Animation loop
+      - [x] Separate animation loop from animated border segments. (Now combined)
+      - [x] use the animation loop for BOTH border segments and logo animation.
     - [ ] Handle collision with gameArea borders.
       - [ ] Define logo boundaries based on its current position and dimensions (e.g., top, bottom, left, right edges).
       - [ ] Check if the logo's top edge hits or exceeds the top border of the game area.

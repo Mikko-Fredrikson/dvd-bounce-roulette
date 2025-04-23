@@ -9,6 +9,7 @@ The game is described in the `game-document.md` file
 
 - **Important** Always develop every feature one task at a time
 - **Important** Write unit tests for all components and utilities before implementing the feature.
+- **Important** Write testable code.
 - Use pnpm run test to run test. You can still define specifc file. like `pnpm run test GameArea`
 - Follow React best practices with TypeScript
 - Use Redux Toolkit for state management

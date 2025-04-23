@@ -11,7 +11,10 @@ import {
   GameDimensions,
 } from "../../utils/positionUtils/calculatePlayerNamePositions";
 import PlayerNameBox from "../PlayerNameBox/PlayerNameBox";
-import { initializeLogoPosition } from "../../store/slices/logoSlice/logoSlice";
+import {
+  initializeLogoPosition,
+  setLogoPosition,
+} from "../../store/slices/logoSlice/logoSlice";
 
 interface GameAreaProps {
   width?: number;
@@ -26,7 +29,7 @@ interface GameAreaProps {
 const GameArea: React.FC<GameAreaProps> = ({
   width = 900,
   height = 600,
-  animationSpeed = 1, // pixels per frame
+  animationSpeed = 1, // pixels per frame for border rotation
 }) => {
   // Fixed aspect ratio of 3:2 (width:height)
   const aspectRatio = width / height;
@@ -146,11 +149,23 @@ const GameArea: React.FC<GameAreaProps> = ({
     [playerBorderSegments, width, height, drawLogo],
   );
 
-  // Animation loop to continuously update the offset
-  const animateOffset = React.useCallback(() => {
+  // Combined animation loop for border rotation and logo movement
+  const animate = React.useCallback(() => {
+    // Update border offset
     setOffset((prevOffset) => (prevOffset + animationSpeed) % perimeter);
-    animationRef.current = requestAnimationFrame(animateOffset);
-  }, [animationSpeed, perimeter]);
+
+    // Update logo position based on its velocity
+    // Note: Collision detection will be added later
+    dispatch(
+      setLogoPosition({
+        x: logo.position.x + logo.velocity.x,
+        y: logo.position.y + logo.velocity.y,
+      }),
+    );
+
+    // Request next frame
+    animationRef.current = requestAnimationFrame(animate);
+  }, [animationSpeed, perimeter, dispatch, logo.position, logo.velocity]);
 
   // Setup canvas context and start animation
   useEffect(() => {
@@ -170,8 +185,8 @@ const GameArea: React.FC<GameAreaProps> = ({
       dispatch(initializeLogoPosition({ x: width / 2, y: height / 2 }));
     }
 
-    // Start animation loop
-    animationRef.current = requestAnimationFrame(animateOffset);
+    // Start the combined animation loop
+    animationRef.current = requestAnimationFrame(animate);
 
     // Cleanup animation loop on unmount
     return () => {
@@ -179,7 +194,7 @@ const GameArea: React.FC<GameAreaProps> = ({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [width, height, animateOffset, dispatch, logo.position]);
+  }, [width, height, animate, dispatch, logo.position.x, logo.position.y]);
 
   // Update canvas when player border segments or logo state change
   useEffect(() => {
