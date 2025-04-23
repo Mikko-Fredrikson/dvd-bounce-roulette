@@ -19,6 +19,7 @@ import {
 } from "../../store/slices/logoSlice/logoSlice";
 import { decrementPlayerHealth } from "../../store/slices/playerSlice/playerSlice";
 import { PlayerBorderSegments } from "../../utils/borderUtils/types";
+import { pauseGame } from "../../store/slices/gameStateSlice/gameStateSlice"; // Import pauseGame
 
 interface GameAreaProps {
   width?: number;
@@ -278,6 +279,13 @@ const GameArea: React.FC<GameAreaProps> = ({
     activePlayers,
     gameStatus,
   ]);
+
+  // Effect to pause the game when only one player remains
+  useEffect(() => {
+    if (activePlayers.length === 1 && gameStatus === "running") {
+      dispatch(pauseGame());
+    }
+  }, [activePlayers.length, gameStatus, dispatch]);
 
   // Setup canvas context and manage animation loop based on gameStatus
   useEffect(() => {
