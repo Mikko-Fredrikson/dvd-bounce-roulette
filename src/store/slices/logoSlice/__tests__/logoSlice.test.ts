@@ -9,14 +9,14 @@ import logoReducer, {
   initializeLogoPosition,
   reverseVelocityX,
   reverseVelocityY,
-  // Import initial state if needed for comparison, or define expected initial state here
+  resetLogoPosition, // Import the new action
 } from "../logoSlice";
 import type { LogoState, Vector2D, Size } from "../types";
 
 // Define expected initial state structure for clarity in tests
 const expectedInitialState: LogoState = {
   position: { x: 0, y: 0 },
-  // Calculate expected initial velocity based on defaults
+  initialPosition: { x: 0, y: 0 }, // Add initialPosition to expected state
   velocity: {
     x: 2 * Math.cos((45 * Math.PI) / 180),
     y: 2 * Math.sin((45 * Math.PI) / 180),
@@ -29,8 +29,6 @@ const expectedInitialState: LogoState = {
 
 describe("logoSlice reducer", () => {
   it("should handle initial state", () => {
-    // Check if the reducer returns the expected initial state when called with undefined state
-    // Use expect(...).toEqual(...) for deep equality checks of objects
     expect(logoReducer(undefined, { type: "unknown" })).toEqual(
       expectedInitialState,
     );
@@ -103,13 +101,19 @@ describe("logoSlice reducer", () => {
     expect(nextStateNull.imageUrl).toBeNull();
   });
 
-  it("should handle initializeLogoPosition", () => {
+  it("should handle initializeLogoPosition and store initial position", () => {
     const initialPos: Vector2D = { x: 200, y: 300 };
+    const stateBeforeInit = {
+      ...expectedInitialState,
+      position: { x: 50, y: 50 }, // Simulate a different position before init
+      initialPosition: { x: 0, y: 0 }, // Default initial before init
+    };
     const nextState = logoReducer(
-      expectedInitialState,
+      stateBeforeInit,
       initializeLogoPosition(initialPos),
     );
     expect(nextState.position).toEqual(initialPos);
+    expect(nextState.initialPosition).toEqual(initialPos); // Verify initialPosition is stored
   });
 
   it("should handle reverseVelocityX and update angle", () => {
@@ -136,5 +140,17 @@ describe("logoSlice reducer", () => {
     expect(nextState.velocity.y).toBe(expectedNewVelocityY);
     expect(nextState.velocity.x).toBe(initialStateWithVelocity.velocity.x); // x should not change
     expect(nextState.angle).toBeCloseTo(expectedNewAngle);
+  });
+
+  it("should handle resetLogoPosition", () => {
+    const initializedState: LogoState = {
+      ...expectedInitialState,
+      position: { x: 500, y: 600 }, // Simulate a changed position
+      initialPosition: { x: 100, y: 200 }, // Simulate an initialized position
+    };
+    const nextState = logoReducer(initializedState, resetLogoPosition());
+    expect(nextState.position).toEqual(initializedState.initialPosition);
+    expect(nextState.velocity).toEqual(initializedState.velocity);
+    expect(nextState.initialPosition).toEqual(initializedState.initialPosition);
   });
 });

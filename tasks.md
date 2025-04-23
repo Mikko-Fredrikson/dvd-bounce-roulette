@@ -25,8 +25,9 @@
 
 ### Game Controls
 
-- [ ] Create game state slice (Medium)
-  - [ ] Implement start/pause/reset functionality (Medium)
+- [x] Create game state slice (Medium)
+  - [x] Implement start/pause/reset functionality (Medium)
+    - [x] Adjust reset to restore player health and logo position instead of removing players (Low)
   - [ ] Add game loop with animation frame (High)
 
 ### Player border sections
