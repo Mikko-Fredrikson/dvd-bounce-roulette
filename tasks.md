@@ -72,12 +72,12 @@
 
   - [ ] Handle logo collision with player border segments.
 
-    - [ ] Determine the exact point of collision on the game area border.
-    - [ ] Identify which player's border segment is at the collision point at the time of impact.
-      - [ ] Consider the current rotation of the border segments.
-      - [ ] Map the collision coordinates to the corresponding player segment.
-    - [ ] Dispatch an action to reduce the health of the identified player.
-      - [ ] Refer to the player's state using their assigned ID or name.
+    - [x] Determine the exact point of collision on the game area border.
+    - [x] Identify which player's border segment is at the collision point at the time of impact.
+      - [x] Consider the current rotation of the border segments.
+      - [x] Map the collision coordinates to the corresponding player segment.
+    - [x] Dispatch an action to reduce the health of the identified player.
+      - [x] Refer to the player's state using their assigned ID or name.
     - [ ] Check if the player's health has reached zero after the hit.
     - [ ] If health is zero, trigger player elimination logic.
       - [ ] Remove the player's border segment(s).

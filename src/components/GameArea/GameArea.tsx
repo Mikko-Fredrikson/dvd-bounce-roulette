@@ -17,6 +17,8 @@ import {
   reverseVelocityX,
   reverseVelocityY,
 } from "../../store/slices/logoSlice/logoSlice";
+import { decrementPlayerHealth } from "../../store/slices/playerSlice/playerSlice";
+import { PlayerBorderSegments } from "../../utils/borderUtils/types";
 
 interface GameAreaProps {
   width?: number;
@@ -164,17 +166,74 @@ const GameArea: React.FC<GameAreaProps> = ({
     const logoHalfWidth = logo.size.width / 2;
     const logoHalfHeight = logo.size.height / 2;
 
+    let collisionSide: "top" | "right" | "bottom" | "left" | null = null;
+    let collisionPoint: number | null = null;
+
     // Check horizontal collision (left/right walls)
-    if (nextX - logoHalfWidth <= 0 || nextX + logoHalfWidth >= width) {
+    if (nextX - logoHalfWidth <= 0) {
       dispatch(reverseVelocityX());
+      nextX = logoHalfWidth; // Prevent sticking
+      collisionSide = "left";
+      collisionPoint = nextY; // Collision point along the vertical axis
+    } else if (nextX + logoHalfWidth >= width) {
+      dispatch(reverseVelocityX());
+      nextX = width - logoHalfWidth; // Prevent sticking
+      collisionSide = "right";
+      collisionPoint = nextY; // Collision point along the vertical axis
     }
 
     // Check vertical collision (top/bottom walls)
-    if (nextY - logoHalfHeight <= 0 || nextY + logoHalfHeight >= height) {
+    if (nextY - logoHalfHeight <= 0) {
       dispatch(reverseVelocityY());
+      nextY = logoHalfHeight; // Prevent sticking
+      collisionSide = "top";
+      collisionPoint = nextX; // Collision point along the horizontal axis
+    } else if (nextY + logoHalfHeight >= height) {
+      dispatch(reverseVelocityY());
+      nextY = height - logoHalfHeight; // Prevent sticking
+      collisionSide = "bottom";
+      collisionPoint = nextX; // Collision point along the horizontal axis
     }
 
-    // Update logo position
+    // If a collision occurred, find the player segment hit
+    if (collisionSide && collisionPoint !== null) {
+      // Find the player whose segment was hit
+      const hitPlayerSegment = (playerBorderSegments as PlayerBorderSegments[]).find(
+        (playerSegment) =>
+          playerSegment.segments.some((segment) => {
+            if (segment.side.name !== collisionSide) {
+              return false;
+            }
+
+            let pointToCheck = collisionPoint!;
+            // Adjust collision point based on side for comparison with segment startPosition
+            if (collisionSide === "bottom") {
+              pointToCheck = width - collisionPoint!; // Bottom side coordinates run right-to-left
+            } else if (collisionSide === "left") {
+              pointToCheck = height - collisionPoint!; // Left side coordinates run bottom-to-top
+            }
+
+            // Check if the collision point falls within the segment's range
+            return (
+              pointToCheck >= segment.startPosition &&
+              pointToCheck < segment.startPosition + segment.length
+            );
+          }),
+      );
+
+      if (hitPlayerSegment) {
+        console.log(
+          `Collision detected! Side: ${collisionSide}, Point: ${collisionPoint}, Player Hit: ${hitPlayerSegment.playerName} (ID: ${hitPlayerSegment.playerId})`,
+        );
+        dispatch(decrementPlayerHealth(hitPlayerSegment.playerId));
+      } else {
+        console.log(
+          `Collision detected! Side: ${collisionSide}, Point: ${collisionPoint}, No player segment found at this point.`,
+        );
+      }
+    }
+
+    // Update logo position with potentially adjusted values
     dispatch(
       setLogoPosition({
         x: nextX,
@@ -193,6 +252,7 @@ const GameArea: React.FC<GameAreaProps> = ({
     logo.size,
     width,
     height,
+    playerBorderSegments,
   ]);
 
   // Setup canvas context and start animation
@@ -225,18 +285,7 @@ const GameArea: React.FC<GameAreaProps> = ({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [
-    width,
-    height,
-    animate,
-    dispatch,
-    logo.position.x,
-    logo.position.y,
-    logo.velocity.x,
-    logo.velocity.y,
-    logo.size.width,
-    logo.size.height,
-  ]);
+  }, [width, height, animate, dispatch, logo.position.x, logo.position.y]);
 
   // Update canvas when player border segments or logo state change
   useEffect(() => {
@@ -253,7 +302,7 @@ const GameArea: React.FC<GameAreaProps> = ({
   return (
     <div
       className="w-full relative"
-      style={{ aspectRatio: `${aspectRatio}`, maxWidth: `${width}px` }}
+      style={{ aspectRatio: `${width / height}`, maxWidth: `${width}px` }}
     >
       <div
         data-testid="game-area"
