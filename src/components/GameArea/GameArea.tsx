@@ -20,7 +20,10 @@ import {
 } from "../../store/slices/logoSlice/logoSlice";
 import { decrementPlayerHealth } from "../../store/slices/playerSlice/playerSlice";
 import { PlayerBorderSegments } from "../../utils/borderUtils/types";
-import { pauseGame } from "../../store/slices/gameStateSlice/gameStateSlice";
+import {
+  pauseGame,
+  finishGame,
+} from "../../store/slices/gameStateSlice/gameStateSlice"; // Import finishGame
 import { createParticles } from "../../utils/particleUtils/particleManager";
 import type { Particle } from "../../utils/particleUtils/types";
 
@@ -448,8 +451,9 @@ const GameArea: React.FC<GameAreaProps> = ({
   ]);
 
   useEffect(() => {
+    // Check if only one player remains and finish the game
     if (activePlayers.length === 1 && gameStatus === "running") {
-      dispatch(pauseGame());
+      dispatch(finishGame()); // Dispatch finishGame instead of pauseGame
     }
   }, [activePlayers.length, gameStatus, dispatch]);
 

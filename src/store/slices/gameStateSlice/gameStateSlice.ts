@@ -27,10 +27,13 @@ const gameStateSlice = createSlice({
       state.status = "idle";
       // Potentially reset other game aspects here or dispatch other actions
     },
+    finishGame: (state) => {
+      state.status = "finished";
+    },
   },
 });
 
-export const { startGame, pauseGame, resumeGame, resetGame } =
+export const { startGame, pauseGame, resumeGame, resetGame, finishGame } =
   gameStateSlice.actions;
 
 export default gameStateSlice.reducer;

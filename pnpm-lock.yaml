@@ -20,6 +20,9 @@ importers:
       react:
         specifier: ^19.0.0
         version: 19.1.0
+      react-confetti:
+        specifier: ^6.4.0
+        version: 6.4.0(react@19.1.0)
       react-dom:
         specifier: ^19.0.0
         version: 19.1.0(react@19.1.0)
@@ -48,6 +51,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.0.4
         version: 19.1.2(@types/react@19.1.2)
+      '@types/redux-mock-store':
+        specifier: ^1.5.0
+        version: 1.5.0
       '@types/uuid':
         specifier: ^10.0.0
         version: 10.0.0
@@ -78,6 +84,9 @@ importers:
       prettier:
         specifier: 3.5.3
         version: 3.5.3
+      redux-mock-store:
+        specifier: ^1.5.5
+        version: 1.5.5(redux@5.0.1)
       typescript:
         specifier: ~5.7.2
         version: 5.7.3
@@ -711,6 +720,9 @@ packages:
   '@types/react@19.1.2':
     resolution: {integrity: sha512-oxLPMytKchWGbnQM9O7D67uPa9paTNxO7jVoNMXgkkErULBPhPARCfkKL9ytcIJJRGjbsVwW4ugJzyFFvm/Tiw==}
 
+  '@types/redux-mock-store@1.5.0':
+    resolution: {integrity: sha512-jcscBazm6j05Hs6xYCca6psTUBbFT2wqMxT7wZEHAYFxHB/I8jYk7d5msrHUlDiSL02HdTqTmkK2oIV8i3C8DA==}
+
   '@types/use-sync-external-store@0.0.6':
     resolution: {integrity: sha512-zFDAD+tlpf2r4asuHEj0XH6pY6i0g5NeAHPn+15wk3BV6JA69eERFXC1gyGThDkVa1zCyKr5jox1+2LbV/AMLg==}
 
@@ -1300,6 +1312,9 @@ packages:
     resolution: {integrity: sha512-iPZK6eYjbxRu3uB4/WZ3EsEIMJFMqAoopl3R+zuq0UjcAm/MO6KCweDgPfP3elTztoKP3KtnVHxTn2NHBSDVUw==}
     engines: {node: '>=10'}
 
+  lodash.isplainobject@4.0.6:
+    resolution: {integrity: sha512-oSXzaWypCMHkPC3NvBEaPHf0KsA5mvPrOPgQWDsbg8n7orZ290M0BmC/jgRZ4vcJ6DTAhjrsSYgdsW/F+MFOBA==}
+
   lodash.merge@4.6.2:
     resolution: {integrity: sha512-0KpjqXRVvrYyCsX1swR/XTK0va6VQkQM6MNo7PqW77ByjAhoARA8EfrP1N4+KlKj8YS0ZUCtRT/YUuhyYDujIQ==}
 
@@ -1434,6 +1449,12 @@ packages:
   queue-microtask@1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
 
+  react-confetti@6.4.0:
+    resolution: {integrity: sha512-5MdGUcqxrTU26I2EU7ltkWPwxvucQTuqMm8dUz72z2YMqTD6s9vMcDUysk7n9jnC+lXuCPeJJ7Knf98VEYE9Rg==}
+    engines: {node: '>=16'}
+    peerDependencies:
+      react: ^16.3.0 || ^17.0.1 || ^18.0.0 || ^19.0.0
+
   react-dom@19.1.0:
     resolution: {integrity: sha512-Xs1hdnE+DyKgeHJeJznQmYMIBG3TKIHJJT95Q58nHLSrElKlGQqDTR2HQ9fx5CN/Gk6Vh/kupBTDLU11/nDk/g==}
     peerDependencies:
@@ -1466,10 +1487,18 @@ packages:
     resolution: {integrity: sha512-6tDA8g98We0zd0GvVeMT9arEOnTw9qM03L9cJXaCjrip1OO764RDBLBfrB4cwzNGDj5OA5ioymC9GkizgWJDUg==}
     engines: {node: '>=8'}
 
+  redux-mock-store@1.5.5:
+    resolution: {integrity: sha512-YxX+ofKUTQkZE4HbhYG4kKGr7oCTJfB0GLy7bSeqx86GLpGirrbUWstMnqXkqHNaQpcnbMGbof2dYs5KsPE6Zg==}
+    peerDependencies:
+      redux: '*'
+
   redux-thunk@3.1.0:
     resolution: {integrity: sha512-NW2r5T6ksUKXCabzhL9z+h206HQw/NJkcLm1GPImRQ8IzfXwRGqjVhKJGauHirT0DAuyy6hjdnMZaRoAcy0Klw==}
     peerDependencies:
       redux: ^5.0.0
+
+  redux@4.2.1:
+    resolution: {integrity: sha512-LAUYz4lc+Do8/g7aeRa8JkyDErK6ekstQaqWQrNRW//MY1TvCEpMtpTWvlQ+FPbWCx+Xixu/6SHt5N0HR+SB4w==}
 
   redux@5.0.1:
     resolution: {integrity: sha512-M9/ELqF6fy8FwmkpnF0S3YKOqMyoWJ4+CS5Efg2ct3oY9daQvd/Pc71FpGZsVsbl3Cpb+IIcjBDUnnyBdQbq4w==}
@@ -1607,6 +1636,9 @@ packages:
     engines: {node: '>=18.12'}
     peerDependencies:
       typescript: '>=4.8.4'
+
+  tween-functions@1.2.0:
+    resolution: {integrity: sha512-PZBtLYcCLtEcjL14Fzb1gSxPBeL7nWvGhO5ZFPGqziCcr8uvHp0NDmdjBchp6KHL+tExcg0m3NISmKxhU394dA==}
 
   type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
@@ -2294,6 +2326,10 @@ snapshots:
     dependencies:
       csstype: 3.1.3
 
+  '@types/redux-mock-store@1.5.0':
+    dependencies:
+      redux: 4.2.1
+
   '@types/use-sync-external-store@0.0.6': {}
 
   '@types/uuid@10.0.0': {}
@@ -2912,6 +2948,8 @@ snapshots:
     dependencies:
       p-locate: 5.0.0
 
+  lodash.isplainobject@4.0.6: {}
+
   lodash.merge@4.6.2: {}
 
   lodash@4.17.21: {}
@@ -3020,6 +3058,11 @@ snapshots:
 
   queue-microtask@1.2.3: {}
 
+  react-confetti@6.4.0(react@19.1.0):
+    dependencies:
+      react: 19.1.0
+      tween-functions: 1.2.0
+
   react-dom@19.1.0(react@19.1.0):
     dependencies:
       react: 19.1.0
@@ -3045,9 +3088,18 @@ snapshots:
       indent-string: 4.0.0
       strip-indent: 3.0.0
 
+  redux-mock-store@1.5.5(redux@5.0.1):
+    dependencies:
+      lodash.isplainobject: 4.0.6
+      redux: 5.0.1
+
   redux-thunk@3.1.0(redux@5.0.1):
     dependencies:
       redux: 5.0.1
+
+  redux@4.2.1:
+    dependencies:
+      '@babel/runtime': 7.27.0
 
   redux@5.0.1: {}
 
@@ -3169,6 +3221,8 @@ snapshots:
   ts-api-utils@2.1.0(typescript@5.7.3):
     dependencies:
       typescript: 5.7.3
+
+  tween-functions@1.2.0: {}
 
   type-check@0.4.0:
     dependencies:

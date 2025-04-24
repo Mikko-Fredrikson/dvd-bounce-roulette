@@ -7,6 +7,12 @@
 - [x] Container for name input and settings
   - [x] Implement tab navigation functionality (Low)
   - [x] Style the control panel with consistent theme (Low)
+- [x] Create WinnerDisplay component (Medium)
+  - [x] Display winner's name and color (Low)
+  - [x] Add celebratory styling (Low)
+    - [x] Implement confetti effect (Medium)
+  - [x] Conditionally render based on win condition (Low)
+  - [ ] Add a reset button to start a new game (Low) # New Task
 
 ### Name-input
 
@@ -93,7 +99,8 @@
       - [x] Remove the player's border segment(s).
       - [x] Recalculate and redistribute the freed border space to adjacent players (refer to game rules in `game-document.md`).
       - [x] Update the player list/state.
-    - [ ] Check for win conditions (e.g., only one player remaining).
+    - [x] Check for win conditions (e.g., only one player remaining). # Task completed
+      - [x] Dispatch `finishGame` action when only one player remains. # Task completed
 
   - [ ] Integrate with game mechanics.
 
@@ -120,6 +127,14 @@
   - [ ] Add sound effect for player elimination (Low)
   - [ ] Add background music (Low)
   - [ ] Add sound effect for winner announcement (Low)
+
+## [x] Hooks
+
+- [x] Create useWindowSize hook (Low)
+  - [x] Implement hook logic to track window dimensions (Low)
+  - [x] Add event listener for resize events (Low)
+  - [x] Implement cleanup for event listener (Low)
+- [x] Create tests for useWindowSize hook (Medium)
 
 ## Project Setup
 

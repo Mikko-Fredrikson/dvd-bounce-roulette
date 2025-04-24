@@ -11,6 +11,7 @@ import logoReducer, {
 } from "../../../store/slices/logoSlice/logoSlice";
 import gameStateReducer, {
   pauseGame,
+  finishGame, // Added finishGame import
 } from "../../../store/slices/gameStateSlice/gameStateSlice";
 import settingsReducer from "../../../store/slices/settingsSlice/settingsSlice";
 import {
@@ -50,10 +51,10 @@ const mockCtx = {
   ellipse: vi.fn(),
   canvas: { width: 900, height: 600 },
   // Add mocks for properties accessed in drawGameElements
-  strokeStyle: '',
+  strokeStyle: "",
   lineWidth: 0,
   globalAlpha: 1,
-  lineCap: 'butt',
+  lineCap: "butt",
   drawImage: vi.fn(), // Add drawImage mock
 };
 
@@ -371,7 +372,7 @@ describe("GameArea Collision Detection with Angle Variance", () => {
     });
   });
 
-  it("should pause game when only one player remains", () => {
+  it("should finish game when only one player remains", () => {
     const { store, dispatchSpy } = renderGameArea({
       players: {
         players: [
@@ -401,10 +402,12 @@ describe("GameArea Collision Detection with Angle Variance", () => {
     advanceFrames(1);
 
     waitFor(() => {
-      expect(dispatchSpy).toHaveBeenCalledWith(pauseGame());
+      // Expect finishGame to be called, not pauseGame
+      expect(dispatchSpy).toHaveBeenCalledWith(finishGame());
     });
 
-    expect(store.getState().gameState.status).toBe("paused");
+    // Verify the final state is 'finished'
+    expect(store.getState().gameState.status).toBe("finished");
   });
 });
 
