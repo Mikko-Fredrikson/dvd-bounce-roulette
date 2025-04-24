@@ -2,7 +2,10 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { LogoState, Vector2D, Size } from "./types";
 
 // Helper function to normalize a vector
-const normalizeVector = (vec: { x: number; y: number }): { dx: number; dy: number } => {
+const normalizeVector = (vec: {
+  x: number;
+  y: number;
+}): { dx: number; dy: number } => {
   const magnitude = Math.sqrt(vec.x * vec.x + vec.y * vec.y);
   if (magnitude === 0) {
     // Avoid division by zero, return a default direction (e.g., right)
@@ -41,10 +44,14 @@ const logoSlice = createSlice({
     // Renamed from setLogoVelocity and takes a direction object
     setLogoDirection(state, action: PayloadAction<{ dx: number; dy: number }>) {
       // Ensure the direction is always stored normalized
-      const magnitude = Math.sqrt(action.payload.dx ** 2 + action.payload.dy ** 2);
+      const magnitude = Math.sqrt(
+        action.payload.dx ** 2 + action.payload.dy ** 2,
+      );
       if (magnitude === 0) {
         // Keep previous direction if new direction is zero vector
-        console.warn("Attempted to set zero direction vector. Keeping previous.");
+        console.warn(
+          "Attempted to set zero direction vector. Keeping previous.",
+        );
       } else {
         state.direction.dx = action.payload.dx / magnitude;
         state.direction.dy = action.payload.dy / magnitude;

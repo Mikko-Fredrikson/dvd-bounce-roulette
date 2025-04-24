@@ -223,13 +223,19 @@ describe("GameArea Collision Detection with Angle Variance", () => {
     const setDirectionAction = dispatchSpy.mock.calls.find(
       (call) => call[0].type === setLogoDirection.type,
     );
-    expect(setDirectionAction, "setLogoDirection should have been called").toBeDefined();
+    expect(
+      setDirectionAction,
+      "setLogoDirection should have been called",
+    ).toBeDefined();
 
     // Check if setLogoPosition was called
     const setPositionAction = dispatchSpy.mock.calls.find(
       (call) => call[0].type === setLogoPosition.type,
     );
-    expect(setPositionAction, "setLogoPosition should have been called").toBeDefined();
+    expect(
+      setPositionAction,
+      "setLogoPosition should have been called",
+    ).toBeDefined();
 
     // Original check for setLogoDirection payload
     const reflectedDx = initialDirection.dx;

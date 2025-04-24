@@ -22,7 +22,7 @@
   - [x] Define state shape (angleVariance, playerHealth, customLogo, logoSpeed) (Low)
   - [x] Implement reducers for updating settings (Low)
   - [x] Write unit tests for settings slice (Medium)
-  - [ ] Implement logo upload and preview (Medium)
+  - [x] Implement logo upload and preview (Medium)
   - [x] Add angle variance controls (Low)
     - [x] Connect slider in ControlPanel to dispatch update action (Low)
     - [x] Display current variance value in ControlPanel (Low)
@@ -80,7 +80,7 @@
       - [x] Add angle variance logic upon collision based on settings (Medium)
       - [ ] Ensure collision detection accounts for potential high speeds (preventing the logo from passing through the border between frames).
 
-  - [ ] Handle logo collision with player border segments.
+  - [x] Handle logo collision with player border segments.
 
     - [x] Determine the exact point of collision on the game area border.
     - [x] Identify which player's border segment is at the collision point at the time of impact.

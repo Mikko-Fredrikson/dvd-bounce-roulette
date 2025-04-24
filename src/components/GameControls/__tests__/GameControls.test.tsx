@@ -12,7 +12,8 @@ import { resetLogo } from "../../../store/slices/logoSlice/logoSlice"; // Import
 const mockStore = configureStore([]);
 
 describe("GameControls Component", () => {
-  it("should dispatch resetGame, resetPlayersHealth, and resetLogo on reset button click", () => { // Updated test description
+  it("should dispatch resetGame, resetPlayersHealth, and resetLogo on reset button click", () => {
+    // Updated test description
     // Initial state for the mock store
     const initialState = {
       gameState: { status: "idle" },

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store";
 import {
@@ -43,13 +43,20 @@ const GameArea: React.FC<GameAreaProps> = ({
   const allPlayers = useSelector((state: RootState) => state.players.players);
   const logo = useSelector((state: RootState) => state.logo);
   const gameStatus = useSelector((state: RootState) => state.gameState.status);
-  const angleVariance = useSelector(
-    (state: RootState) => state.settings.angleVariance,
+  const { angleVariance, logoSpeed, customLogo } = useSelector(
+    (state: RootState) => state.settings,
   );
-  const logoSpeed = useSelector((state: RootState) => state.settings.logoSpeed);
 
   // Filter out eliminated players
   const activePlayers = allPlayers.filter((player) => !player.isEliminated);
+
+  // Memoize the Image object to avoid reloading on every render
+  const logoImage = useMemo(() => {
+    if (!customLogo) return null;
+    const img = new Image();
+    img.src = customLogo;
+    return img;
+  }, [customLogo]);
 
   // Animation state
   const [offset, setOffset] = useState(0);
@@ -80,32 +87,39 @@ const GameArea: React.FC<GameAreaProps> = ({
    */
   const drawLogo = React.useCallback(
     (ctx: CanvasRenderingContext2D) => {
-      const { position, size, imageUrl } = logo;
+      const { position, size } = logo;
       const centerX = position.x;
       const centerY = position.y;
-      const radiusX = size.width / 2; // Horizontal radius
-      const radiusY = size.height / 2; // Vertical radius
 
-      // TODO: Implement image drawing if imageUrl exists
-      if (imageUrl) {
-        // Placeholder for image drawing logic
-        console.warn("Image drawing not yet implemented.");
-        // Example placeholder drawing - maybe draw image within ellipse bounds?
-        ctx.fillStyle = "purple"; // Placeholder color for image
-        ctx.beginPath();
-        ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
-        ctx.fill();
-        // Or draw the actual image clipped to an ellipse? More complex.
-      } else {
-        // Draw a default ellipse if no image
+      if (logoImage && logoImage.complete && logoImage.naturalWidth > 0) {
+        // Image is loaded and valid
+        const imgWidth = logoImage.naturalWidth;
+        const imgHeight = logoImage.naturalHeight;
+        const targetWidth = size.width;
+        const targetHeight = size.height;
+
+        // Calculate scale factor to fit within target dimensions while preserving aspect ratio
+        const scaleX = targetWidth / imgWidth;
+        const scaleY = targetHeight / imgHeight;
+        const scale = Math.min(scaleX, scaleY); // Use the smaller scale factor to fit entirely
+
+        const drawWidth = imgWidth * scale;
+        const drawHeight = imgHeight * scale;
+        const drawX = centerX - drawWidth / 2; // Center the image
+        const drawY = centerY - drawHeight / 2;
+
+        ctx.drawImage(logoImage, drawX, drawY, drawWidth, drawHeight);
+      } else if (!customLogo) {
+        // Draw a default ellipse if no custom logo is set
+        const radiusX = size.width / 2; // Horizontal radius
+        const radiusY = size.height / 2; // Vertical radius
         ctx.fillStyle = "blue"; // Default logo color
         ctx.beginPath();
-        // Use ellipse method: ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle)
         ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
         ctx.fill();
       }
     },
-    [logo],
+    [logo, logoImage, customLogo],
   );
 
   /**
@@ -377,7 +391,7 @@ const GameArea: React.FC<GameAreaProps> = ({
 
     // Draw game elements (borders and logo)
     drawGameElements(ctx);
-  }, [playerBorderSegments, drawGameElements, logo, gameStatus]);
+  }, [playerBorderSegments, drawGameElements, logo, gameStatus, logoImage]);
 
   return (
     <div

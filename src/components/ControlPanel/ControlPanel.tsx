@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, ChangeEvent } from "react";
 import NameInput from "../NameInput/NameInput";
 import GameControls from "../GameControls/GameControls"; // Import GameControls
 import { useAppDispatch, useAppSelector } from "../../store/hooks"; // Import hooks
 import {
   setAngleVariance,
   setLogoSpeed, // Import setLogoSpeed action
+  setCustomLogo, // Import setCustomLogo action
 } from "../../store/slices/settingsSlice/settingsSlice"; // Import action
 
 /**
@@ -17,6 +18,8 @@ const ControlPanel = () => {
   const dispatch = useAppDispatch();
   const angleVariance = useAppSelector((state) => state.settings.angleVariance);
   const logoSpeed = useAppSelector((state) => state.settings.logoSpeed); // Get logoSpeed from state
+  const customLogo = useAppSelector((state) => state.settings.customLogo); // Get customLogo from state
+  const [logoPreview, setLogoPreview] = useState<string | null>(customLogo);
 
   const handleAngleVarianceChange = (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -25,9 +28,41 @@ const ControlPanel = () => {
     dispatch(setAngleVariance(value));
   };
 
-  const handleLogoSpeedChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoSpeedChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const value = parseInt(event.target.value, 10);
     dispatch(setLogoSpeed(value)); // Dispatch setLogoSpeed action
+  };
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && file.type === "image/png") {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        dispatch(setCustomLogo(result));
+        setLogoPreview(result);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      // Handle error or invalid file type
+      dispatch(setCustomLogo(null));
+      setLogoPreview(null);
+      alert("Please select a valid PNG file.");
+    }
+  };
+
+  const clearCustomLogo = () => {
+    dispatch(setCustomLogo(null));
+    setLogoPreview(null);
+    // Optionally reset the file input value if needed
+    const fileInput = document.getElementById(
+      "logo-upload",
+    ) as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = "";
+    }
   };
 
   return (
@@ -77,32 +112,55 @@ const ControlPanel = () => {
             {/* Logo upload */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-slate-700">
-                Custom Logo
+                Custom Logo (PNG)
               </label>
-              <div className="flex items-center justify-center w-full">
-                <label className="flex flex-col rounded-lg border-2 border-dashed w-full h-32 p-3 group text-center border-slate-300 hover:border-indigo-500 transition-colors cursor-pointer">
-                  <div className="h-full w-full flex flex-col items-center justify-center">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="w-10 h-10 text-slate-400 group-hover:text-indigo-500 transition-colors"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                      />
-                    </svg>
-                    <p className="text-sm text-slate-500 group-hover:text-indigo-500 transition-colors">
-                      Click to upload PNG
-                    </p>
-                  </div>
-                  <input type="file" accept="image/png" className="hidden" />
-                </label>
-              </div>
+              {logoPreview ? (
+                <div className="relative group">
+                  <img
+                    src={logoPreview}
+                    alt="Custom Logo Preview"
+                    className="max-w-full h-32 object-contain border border-slate-300 rounded-lg p-2 bg-white mx-auto"
+                  />
+                  <button
+                    onClick={clearCustomLogo}
+                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-600"
+                    aria-label="Clear custom logo"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center w-full">
+                  <label className="flex flex-col rounded-lg border-2 border-dashed w-full h-32 p-3 group text-center border-slate-300 hover:border-indigo-500 transition-colors cursor-pointer">
+                    <div className="h-full w-full flex flex-col items-center justify-center">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="w-10 h-10 text-slate-400 group-hover:text-indigo-500 transition-colors"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                        />
+                      </svg>
+                      <p className="text-sm text-slate-500 group-hover:text-indigo-500 transition-colors mt-2">
+                        Click to upload PNG
+                      </p>
+                    </div>
+                    <input
+                      id="logo-upload"
+                      type="file"
+                      accept="image/png"
+                      className="hidden"
+                      onChange={handleFileChange}
+                    />
+                  </label>
+                </div>
+              )}
             </div>
 
             {/* Angle variance */}

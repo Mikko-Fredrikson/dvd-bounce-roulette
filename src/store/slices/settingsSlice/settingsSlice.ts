@@ -1,15 +1,15 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export interface SettingsState {
-  angleVariance: number; // Max deviation in degrees (e.g., 10 means +/- 5 degrees)
+  angleVariance: number; // Percentage (0-100)
   playerHealth: number;
-  customLogo: string | null; // URL or path to the custom logo
-  logoSpeed: number; // Speed of the logo animation
+  customLogo: string | null; // Store as data URL
+  logoSpeed: number; // Pixels per frame or similar unit
 }
 
 const initialState: SettingsState = {
-  angleVariance: 10, // Default variance
-  playerHealth: 3,
+  angleVariance: 10, // Default 10%
+  playerHealth: 3, // Default 3 hits
   customLogo: null,
   logoSpeed: 5, // Default speed
 };
@@ -19,16 +19,16 @@ const settingsSlice = createSlice({
   initialState,
   reducers: {
     setAngleVariance(state, action: PayloadAction<number>) {
-      state.angleVariance = action.payload;
+      state.angleVariance = Math.max(0, Math.min(100, action.payload)); // Clamp between 0 and 100
     },
     setPlayerHealth(state, action: PayloadAction<number>) {
-      state.playerHealth = action.payload;
+      state.playerHealth = Math.max(1, action.payload); // Minimum 1 health
     },
     setCustomLogo(state, action: PayloadAction<string | null>) {
       state.customLogo = action.payload;
     },
     setLogoSpeed(state, action: PayloadAction<number>) {
-      state.logoSpeed = action.payload;
+      state.logoSpeed = Math.max(1, action.payload); // Minimum speed 1
     },
     resetSettings(state) {
       state.angleVariance = initialState.angleVariance;

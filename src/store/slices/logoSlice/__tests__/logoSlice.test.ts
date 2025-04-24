@@ -111,7 +111,10 @@ describe("logoSlice reducer", () => {
       direction: normalize({ x: 2, y: 3 }),
     };
     const expectedNewDirectionX = -initialStateWithDirection.direction.dx;
-    const nextState = logoReducer(initialStateWithDirection, reverseVelocityX());
+    const nextState = logoReducer(
+      initialStateWithDirection,
+      reverseVelocityX(),
+    );
     expect(nextState.direction.dx).toBeCloseTo(expectedNewDirectionX);
     expect(nextState.direction.dy).toBeCloseTo(
       initialStateWithDirection.direction.dy,
@@ -124,7 +127,10 @@ describe("logoSlice reducer", () => {
       direction: normalize({ x: 2, y: 3 }),
     };
     const expectedNewDirectionY = -initialStateWithDirection.direction.dy;
-    const nextState = logoReducer(initialStateWithDirection, reverseVelocityY());
+    const nextState = logoReducer(
+      initialStateWithDirection,
+      reverseVelocityY(),
+    );
     expect(nextState.direction.dy).toBeCloseTo(expectedNewDirectionY);
     expect(nextState.direction.dx).toBeCloseTo(
       initialStateWithDirection.direction.dx,
