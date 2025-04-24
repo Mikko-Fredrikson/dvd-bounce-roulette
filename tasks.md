@@ -99,7 +99,27 @@
 
   - [ ] When the shape hits a border, it sets an state for the border side (`utils/borderUtils/borderSides.ts`) and position touched.
 
--
+- [ ] Visual Effects
+
+  - [ ] Change logo color to match the last hit player's color (Low)
+  - [ ] Add particle effects on collision (Medium)
+    - [ ] Particles should match the color of the hit player segment (Low)
+  - [ ] Add small impact visual effect at the collision point (Low)
+  - [ ] Add a subtle trail effect to the moving logo (Medium)
+  - [ ] Add screen shake on collision (Low)
+  - [ ] Add border segment hit/elimination animations (Medium)
+    - [ ] Glow/flash effect on hit (Low)
+    - [ ] Fade/shatter/shrink animation on elimination (Medium)
+  - [ ] Add dynamic background effects (Medium)
+    - [ ] Subtle pulse on collision (Low)
+    - [ ] Color shift on player elimination (Low)
+  - [ ] Add winner announcement animation (Medium)
+
+- [ ] Audio
+  - [ ] Add sound effects for collisions (Low)
+  - [ ] Add sound effect for player elimination (Low)
+  - [ ] Add background music (Low)
+  - [ ] Add sound effect for winner announcement (Low)
 
 ## Project Setup
 
