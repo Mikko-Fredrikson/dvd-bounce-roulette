@@ -1,30 +1,33 @@
 import { describe, it, expect } from "vitest";
 import logoReducer, {
   setLogoPosition,
-  setLogoVelocity,
-  setLogoAngle,
-  setLogoSpeed,
+  setLogoDirection, // Updated import
   setLogoSize,
-  setLogoImageUrl,
+  setLogoImage, // Renamed from setLogoImageUrl
   initializeLogoPosition,
   reverseVelocityX,
   reverseVelocityY,
-  resetLogoPosition, // Import the new action
+  resetLogo, // Updated import
 } from "../logoSlice";
 import type { LogoState, Vector2D, Size } from "../types";
 
+// Helper to normalize for comparison
+const normalize = (vec: { x: number; y: number }) => {
+  const mag = Math.sqrt(vec.x ** 2 + vec.y ** 2);
+  return mag === 0 ? { dx: 1, dy: 0 } : { dx: vec.x / mag, dy: vec.y / mag };
+};
+
 // Define expected initial state structure for clarity in tests
+const initialVelocity = { x: 5, y: 3 };
+const initialDirection = normalize(initialVelocity);
+const DEFAULT_LOGO_SIZE: Size = { width: 80, height: 50 };
+const DEFAULT_INITIAL_POSITION: Vector2D = { x: 0, y: 0 };
+
 const expectedInitialState: LogoState = {
-  position: { x: 0, y: 0 },
-  initialPosition: { x: 0, y: 0 }, // Add initialPosition to expected state
-  velocity: {
-    x: 2 * Math.cos((45 * Math.PI) / 180),
-    y: 2 * Math.sin((45 * Math.PI) / 180),
-  },
-  size: { width: 50, height: 30 },
+  position: DEFAULT_INITIAL_POSITION,
+  direction: initialDirection,
+  size: DEFAULT_LOGO_SIZE,
   imageUrl: null,
-  angle: 45,
-  speed: 2,
 };
 
 describe("logoSlice reducer", () => {
@@ -43,45 +46,26 @@ describe("logoSlice reducer", () => {
     expect(nextState.position).toEqual(newPosition);
   });
 
-  it("should handle setLogoVelocity and update angle/speed", () => {
-    const newVelocity: Vector2D = { x: 3, y: -4 };
-    const expectedSpeed = 5; // sqrt(3^2 + (-4)^2)
-    const expectedAngle = (Math.atan2(-4, 3) * 180) / Math.PI;
+  it("should handle setLogoDirection and normalize it", () => {
+    const newDirectionInput = { dx: 3, dy: -4 };
+    const expectedNormalizedDirection = normalize({ x: 3, y: -4 });
     const nextState = logoReducer(
       expectedInitialState,
-      setLogoVelocity(newVelocity),
+      setLogoDirection(newDirectionInput),
     );
-    expect(nextState.velocity).toEqual(newVelocity);
-    expect(nextState.speed).toBeCloseTo(expectedSpeed);
-    expect(nextState.angle).toBeCloseTo(expectedAngle);
+    expect(nextState.direction.dx).toBeCloseTo(expectedNormalizedDirection.dx);
+    expect(nextState.direction.dy).toBeCloseTo(expectedNormalizedDirection.dy);
   });
 
-  it("should handle setLogoAngle and update velocity", () => {
-    const newAngle = 135;
-    const currentSpeed = expectedInitialState.speed;
-    const expectedVelocity: Vector2D = {
-      x: currentSpeed * Math.cos((newAngle * Math.PI) / 180),
-      y: currentSpeed * Math.sin((newAngle * Math.PI) / 180),
-    };
-    const nextState = logoReducer(expectedInitialState, setLogoAngle(newAngle));
-    expect(nextState.angle).toBeCloseTo(newAngle);
-    expect(nextState.velocity.x).toBeCloseTo(expectedVelocity.x);
-    expect(nextState.velocity.y).toBeCloseTo(expectedVelocity.y);
-    expect(nextState.speed).toBeCloseTo(currentSpeed); // Speed should remain the same
-  });
-
-  it("should handle setLogoSpeed and update velocity", () => {
-    const newSpeed = 5;
-    const currentAngle = expectedInitialState.angle;
-    const expectedVelocity: Vector2D = {
-      x: newSpeed * Math.cos((currentAngle * Math.PI) / 180),
-      y: newSpeed * Math.sin((currentAngle * Math.PI) / 180),
-    };
-    const nextState = logoReducer(expectedInitialState, setLogoSpeed(newSpeed));
-    expect(nextState.speed).toBeCloseTo(newSpeed);
-    expect(nextState.velocity.x).toBeCloseTo(expectedVelocity.x);
-    expect(nextState.velocity.y).toBeCloseTo(expectedVelocity.y);
-    expect(nextState.angle).toBeCloseTo(currentAngle); // Angle should remain the same
+  it("should handle setLogoDirection with zero vector (keep previous)", () => {
+    const zeroDirectionInput = { dx: 0, dy: 0 };
+    const nextState = logoReducer(
+      expectedInitialState,
+      setLogoDirection(zeroDirectionInput),
+    );
+    // Direction should remain the initial direction
+    expect(nextState.direction.dx).toBeCloseTo(initialDirection.dx);
+    expect(nextState.direction.dy).toBeCloseTo(initialDirection.dy);
   });
 
   it("should handle setLogoSize", () => {
@@ -90,67 +74,79 @@ describe("logoSlice reducer", () => {
     expect(nextState.size).toEqual(newSize);
   });
 
-  it("should handle setLogoImageUrl", () => {
+  it("should handle setLogoImage", () => {
     const imageUrl = "http://example.com/logo.png";
-    const nextState = logoReducer(
-      expectedInitialState,
-      setLogoImageUrl(imageUrl),
-    );
+    const nextState = logoReducer(expectedInitialState, setLogoImage(imageUrl));
     expect(nextState.imageUrl).toBe(imageUrl);
-    const nextStateNull = logoReducer(nextState, setLogoImageUrl(null));
+    const nextStateNull = logoReducer(nextState, setLogoImage(null));
     expect(nextStateNull.imageUrl).toBeNull();
   });
 
-  it("should handle initializeLogoPosition and store initial position", () => {
+  it("should handle initializeLogoPosition only if position is 0,0", () => {
     const initialPos: Vector2D = { x: 200, y: 300 };
-    const stateBeforeInit = {
-      ...expectedInitialState,
-      position: { x: 50, y: 50 }, // Simulate a different position before init
-      initialPosition: { x: 0, y: 0 }, // Default initial before init
-    };
-    const nextState = logoReducer(
-      stateBeforeInit,
+    // Test case 1: Initializing from 0,0
+    const stateAtOrigin = { ...expectedInitialState };
+    const nextStateFromOrigin = logoReducer(
+      stateAtOrigin,
       initializeLogoPosition(initialPos),
     );
-    expect(nextState.position).toEqual(initialPos);
-    expect(nextState.initialPosition).toEqual(initialPos); // Verify initialPosition is stored
-  });
+    expect(nextStateFromOrigin.position).toEqual(initialPos);
 
-  it("should handle reverseVelocityX and update angle", () => {
-    const initialStateWithVelocity = {
+    // Test case 2: Trying to initialize when already positioned
+    const stateAlreadyPositioned = {
       ...expectedInitialState,
-      velocity: { x: 2, y: 3 },
+      position: { x: 50, y: 50 },
     };
-    const expectedNewVelocityX = -2;
-    const expectedNewAngle = (Math.atan2(3, -2) * 180) / Math.PI;
-    const nextState = logoReducer(initialStateWithVelocity, reverseVelocityX());
-    expect(nextState.velocity.x).toBe(expectedNewVelocityX);
-    expect(nextState.velocity.y).toBe(initialStateWithVelocity.velocity.y); // y should not change
-    expect(nextState.angle).toBeCloseTo(expectedNewAngle);
+    const nextStateAlreadyPositioned = logoReducer(
+      stateAlreadyPositioned,
+      initializeLogoPosition(initialPos),
+    );
+    // Position should NOT change
+    expect(nextStateAlreadyPositioned.position).toEqual({ x: 50, y: 50 });
   });
 
-  it("should handle reverseVelocityY and update angle", () => {
-    const initialStateWithVelocity = {
+  it("should handle reverseVelocityX", () => {
+    const initialStateWithDirection = {
       ...expectedInitialState,
-      velocity: { x: 2, y: 3 },
+      direction: normalize({ x: 2, y: 3 }),
     };
-    const expectedNewVelocityY = -3;
-    const expectedNewAngle = (Math.atan2(-3, 2) * 180) / Math.PI;
-    const nextState = logoReducer(initialStateWithVelocity, reverseVelocityY());
-    expect(nextState.velocity.y).toBe(expectedNewVelocityY);
-    expect(nextState.velocity.x).toBe(initialStateWithVelocity.velocity.x); // x should not change
-    expect(nextState.angle).toBeCloseTo(expectedNewAngle);
+    const expectedNewDirectionX = -initialStateWithDirection.direction.dx;
+    const nextState = logoReducer(initialStateWithDirection, reverseVelocityX());
+    expect(nextState.direction.dx).toBeCloseTo(expectedNewDirectionX);
+    expect(nextState.direction.dy).toBeCloseTo(
+      initialStateWithDirection.direction.dy,
+    ); // y should not change
   });
 
-  it("should handle resetLogoPosition", () => {
-    const initializedState: LogoState = {
+  it("should handle reverseVelocityY", () => {
+    const initialStateWithDirection = {
+      ...expectedInitialState,
+      direction: normalize({ x: 2, y: 3 }),
+    };
+    const expectedNewDirectionY = -initialStateWithDirection.direction.dy;
+    const nextState = logoReducer(initialStateWithDirection, reverseVelocityY());
+    expect(nextState.direction.dy).toBeCloseTo(expectedNewDirectionY);
+    expect(nextState.direction.dx).toBeCloseTo(
+      initialStateWithDirection.direction.dx,
+    ); // x should not change
+  });
+
+  it("should handle resetLogo", () => {
+    const modifiedState: LogoState = {
       ...expectedInitialState,
       position: { x: 500, y: 600 }, // Simulate a changed position
-      initialPosition: { x: 100, y: 200 }, // Simulate an initialized position
+      direction: normalize({ x: -1, y: 1 }), // Simulate a changed direction
+      size: { width: 10, height: 10 },
+      imageUrl: "test.png",
     };
-    const nextState = logoReducer(initializedState, resetLogoPosition());
-    expect(nextState.position).toEqual(initializedState.initialPosition);
-    expect(nextState.velocity).toEqual(initializedState.velocity);
-    expect(nextState.initialPosition).toEqual(initializedState.initialPosition);
+    const nextState = logoReducer(modifiedState, resetLogo());
+    // Position should reset to default initial (0,0)
+    expect(nextState.position).toEqual(DEFAULT_INITIAL_POSITION);
+    // Direction should reset to initial direction
+    expect(nextState.direction.dx).toBeCloseTo(initialDirection.dx);
+    expect(nextState.direction.dy).toBeCloseTo(initialDirection.dy);
+    // Size and imageUrl should remain unchanged based on current resetLogo logic
+    expect(nextState.size).toEqual(modifiedState.size);
+    expect(nextState.imageUrl).toEqual(modifiedState.imageUrl);
   });
 });

@@ -1,101 +1,86 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { LogoState, Vector2D, Size } from "./types";
 
-// Define default properties
-const DEFAULT_LOGO_SIZE: Size = { width: 50, height: 30 }; // Example size in pixels
-const DEFAULT_SPEED = 2; // Example speed in pixels per frame
-const INITIAL_ANGLE = 45; // Example initial angle in degrees
-const DEFAULT_INITIAL_POSITION: Vector2D = { x: 0, y: 0 }; // Default initial position
-
-// Function to calculate initial velocity from angle and speed
-const calculateVelocity = (angle: number, speed: number): Vector2D => {
-  const angleRad = (angle * Math.PI) / 180;
-  return {
-    x: Math.cos(angleRad) * speed,
-    y: Math.sin(angleRad) * speed,
-  };
+// Helper function to normalize a vector
+const normalizeVector = (vec: { x: number; y: number }): { dx: number; dy: number } => {
+  const magnitude = Math.sqrt(vec.x * vec.x + vec.y * vec.y);
+  if (magnitude === 0) {
+    // Avoid division by zero, return a default direction (e.g., right)
+    return { dx: 1, dy: 0 };
+  }
+  return { dx: vec.x / magnitude, dy: vec.y / magnitude };
 };
 
+// Normalize the initial velocity to get the initial direction
+const initialVelocity = { x: 5, y: 3 };
+const initialDirection = normalizeVector(initialVelocity);
+
+const DEFAULT_LOGO_SIZE: Size = { width: 80, height: 50 }; // Example size
+const DEFAULT_INITIAL_POSITION: Vector2D = { x: 0, y: 0 }; // Default initial position
+
 const initialState: LogoState = {
-  position: DEFAULT_INITIAL_POSITION, // Use default initial position
-  initialPosition: DEFAULT_INITIAL_POSITION, // Store initial position
-  velocity: calculateVelocity(INITIAL_ANGLE, DEFAULT_SPEED),
+  position: DEFAULT_INITIAL_POSITION, // Initial position
+  direction: initialDirection, // Store normalized direction vector
   size: DEFAULT_LOGO_SIZE,
-  imageUrl: null, // No default image initially
-  angle: INITIAL_ANGLE,
-  speed: DEFAULT_SPEED,
+  imageUrl: null, // Optional image URL
 };
 
 const logoSlice = createSlice({
   name: "logo",
   initialState,
   reducers: {
-    setLogoPosition: (state, action: PayloadAction<Vector2D>) => {
+    initializeLogoPosition(state, action: PayloadAction<Vector2D>) {
+      // Initialize only if position is still at origin (0,0)
+      if (state.position.x === 0 && state.position.y === 0) {
+        state.position = action.payload;
+      }
+    },
+    setLogoPosition(state, action: PayloadAction<Vector2D>) {
       state.position = action.payload;
     },
-    setLogoVelocity: (state, action: PayloadAction<Vector2D>) => {
-      state.velocity = action.payload;
-      // Update angle and speed based on new velocity
-      state.speed = Math.sqrt(action.payload.x ** 2 + action.payload.y ** 2);
-      state.angle =
-        (Math.atan2(action.payload.y, action.payload.x) * 180) / Math.PI;
+    // Renamed from setLogoVelocity and takes a direction object
+    setLogoDirection(state, action: PayloadAction<{ dx: number; dy: number }>) {
+      // Ensure the direction is always stored normalized
+      const magnitude = Math.sqrt(action.payload.dx ** 2 + action.payload.dy ** 2);
+      if (magnitude === 0) {
+        // Keep previous direction if new direction is zero vector
+        console.warn("Attempted to set zero direction vector. Keeping previous.");
+      } else {
+        state.direction.dx = action.payload.dx / magnitude;
+        state.direction.dy = action.payload.dy / magnitude;
+      }
     },
-    setLogoAngle: (state, action: PayloadAction<number>) => {
-      state.angle = action.payload % 360; // Keep angle between 0 and 360
-      state.velocity = calculateVelocity(state.angle, state.speed);
+    // Reverses only the direction component
+    reverseVelocityX(state) {
+      state.direction.dx *= -1;
     },
-    setLogoSpeed: (state, action: PayloadAction<number>) => {
-      state.speed = action.payload;
-      state.velocity = calculateVelocity(state.angle, state.speed);
+    // Reverses only the direction component
+    reverseVelocityY(state) {
+      state.direction.dy *= -1;
     },
-    setLogoSize: (state, action: PayloadAction<Size>) => {
+    setLogoSize(state, action: PayloadAction<Size>) {
       state.size = action.payload;
     },
-    setLogoImageUrl: (state, action: PayloadAction<string | null>) => {
+    setLogoImage(state, action: PayloadAction<string | null>) {
       state.imageUrl = action.payload;
     },
-    // Reducer to set initial position, useful after GameArea dimensions are known
-    initializeLogoPosition: (state, action: PayloadAction<Vector2D>) => {
-      state.position = action.payload;
-      state.initialPosition = action.payload; // Store the initial position
-    },
-    // Add other reducers as needed, e.g., for bouncing logic
-    reverseVelocityX: (state) => {
-      state.velocity.x *= -1;
-      state.angle =
-        (Math.atan2(state.velocity.y, state.velocity.x) * 180) / Math.PI;
-    },
-    reverseVelocityY: (state) => {
-      state.velocity.y *= -1;
-      state.angle =
-        (Math.atan2(state.velocity.y, state.velocity.x) * 180) / Math.PI;
-    },
-    // New reducer to reset logo position to its initialized position
-    resetLogoPosition: (state) => {
-      state.position = state.initialPosition; // Reset to the stored initial position
-    },
-    // New reducer to set a random direction
-    randomizeLogoDirection: (state) => {
-      // Generate a random angle between 0 and 360 degrees
-      const randomAngle = Math.random() * 360;
-      state.angle = randomAngle;
-      state.velocity = calculateVelocity(state.angle, state.speed);
+    resetLogo(state) {
+      // Reset position to initial position, keep initial direction
+      state.position = DEFAULT_INITIAL_POSITION;
+      state.direction = initialDirection;
     },
   },
 });
 
 export const {
-  setLogoPosition,
-  setLogoVelocity,
-  setLogoAngle,
-  setLogoSpeed,
-  setLogoSize,
-  setLogoImageUrl,
   initializeLogoPosition,
+  setLogoPosition,
+  setLogoDirection, // Export new action name
   reverseVelocityX,
   reverseVelocityY,
-  resetLogoPosition, // Export the new action
-  randomizeLogoDirection, // Export the new randomize action
+  setLogoSize,
+  setLogoImage,
+  resetLogo,
 } = logoSlice.actions;
 
 export default logoSlice.reducer;

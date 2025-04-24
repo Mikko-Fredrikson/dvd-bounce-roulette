@@ -8,18 +8,16 @@ import {
   resumeGame,
   resetGame,
 } from "../../store/slices/gameStateSlice/gameStateSlice";
-import { resetPlayersHealth } from "../../store/slices/playerSlice/playerSlice"; // Updated import
+import { resetPlayersHealth } from "../../store/slices/playerSlice/playerSlice";
 import {
-  resetLogoPosition,
-  randomizeLogoDirection, // Import the new action
-} from "../../store/slices/logoSlice/logoSlice"; // Import resetLogoPosition
+  resetLogo, // Import resetLogo instead of resetLogoPosition
+} from "../../store/slices/logoSlice/logoSlice";
 
 const GameControls: React.FC = () => {
   const dispatch = useDispatch();
   const gameStatus = useSelector((state: RootState) => state.gameState.status);
 
   const handleStart = () => {
-    dispatch(randomizeLogoDirection()); // Set random direction first
     dispatch(startGame());
   };
 
@@ -33,8 +31,8 @@ const GameControls: React.FC = () => {
 
   const handleReset = () => {
     dispatch(resetGame());
-    dispatch(resetPlayersHealth()); // Dispatch updated player reset action
-    dispatch(resetLogoPosition()); // Dispatch logo reset action
+    dispatch(resetPlayersHealth());
+    dispatch(resetLogo()); // Dispatch resetLogo
   };
 
   // Basic button styling (replace with Tailwind classes later if needed)

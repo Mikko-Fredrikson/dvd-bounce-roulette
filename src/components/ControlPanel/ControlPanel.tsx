@@ -2,7 +2,10 @@ import { useState } from "react";
 import NameInput from "../NameInput/NameInput";
 import GameControls from "../GameControls/GameControls"; // Import GameControls
 import { useAppDispatch, useAppSelector } from "../../store/hooks"; // Import hooks
-import { setAngleVariance } from "../../store/slices/settingsSlice/settingsSlice"; // Import action
+import {
+  setAngleVariance,
+  setLogoSpeed, // Import setLogoSpeed action
+} from "../../store/slices/settingsSlice/settingsSlice"; // Import action
 
 /**
  * ControlPanel component displays the side panel with tabs for:
@@ -13,12 +16,18 @@ const ControlPanel = () => {
   const [activeTab, setActiveTab] = useState<"players" | "settings">("players");
   const dispatch = useAppDispatch();
   const angleVariance = useAppSelector((state) => state.settings.angleVariance);
+  const logoSpeed = useAppSelector((state) => state.settings.logoSpeed); // Get logoSpeed from state
 
   const handleAngleVarianceChange = (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const value = parseInt(event.target.value, 10);
     dispatch(setAngleVariance(value));
+  };
+
+  const handleLogoSpeedChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(event.target.value, 10);
+    dispatch(setLogoSpeed(value)); // Dispatch setLogoSpeed action
   };
 
   return (
@@ -120,6 +129,33 @@ const ControlPanel = () => {
               />
               <p className="text-xs text-slate-500">
                 Max angle deviation on bounce (±{angleVariance / 2}°)
+              </p>
+            </div>
+
+            {/* Logo Speed */}
+            <div className="space-y-3 bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+              <div className="flex justify-between items-center">
+                <label
+                  htmlFor="logo-speed-slider"
+                  className="block text-sm font-medium text-slate-700"
+                >
+                  Logo Speed
+                </label>
+                <span className="text-sm bg-slate-100 px-2 py-1 rounded-md font-mono">
+                  {logoSpeed} {/* Display current logo speed */}
+                </span>
+              </div>
+              <input
+                id="logo-speed-slider"
+                type="range"
+                min="1" // Set appropriate min/max values
+                max="20"
+                value={logoSpeed} // Use value from state
+                onChange={handleLogoSpeedChange} // Handle change
+                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+              />
+              <p className="text-xs text-slate-500">
+                Adjust the speed of the bouncing logo.
               </p>
             </div>
 

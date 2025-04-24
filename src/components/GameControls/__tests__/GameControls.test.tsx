@@ -6,18 +6,24 @@ import configureStore from "redux-mock-store";
 import GameControls from "../GameControls";
 import { resetGame } from "../../../store/slices/gameStateSlice/gameStateSlice";
 import { resetPlayersHealth } from "../../../store/slices/playerSlice/playerSlice";
-import { resetLogoPosition } from "../../../store/slices/logoSlice/logoSlice";
+import { resetLogo } from "../../../store/slices/logoSlice/logoSlice"; // Import resetLogo instead of resetLogoPosition
 
 // Mock the Redux store
 const mockStore = configureStore([]);
 
 describe("GameControls Component", () => {
-  it("should dispatch resetGame, resetPlayersHealth, and resetLogoPosition on reset button click", () => {
-    // Initial state for the mock store (can be minimal for this test)
+  it("should dispatch resetGame, resetPlayersHealth, and resetLogo on reset button click", () => { // Updated test description
+    // Initial state for the mock store
     const initialState = {
-      gameState: { status: "idle" }, // Status can be anything that shows the reset button
+      gameState: { status: "idle" },
       players: { players: [] },
-      logo: { position: { x: 0, y: 0 }, initialPosition: { x: 0, y: 0 } }, // Add necessary parts of logo state
+      // Updated logo state to match the refactored slice
+      logo: {
+        position: { x: 0, y: 0 },
+        direction: { dx: 1, dy: 0 }, // Use direction
+        size: { width: 80, height: 50 },
+        imageUrl: null,
+      },
     };
     const store = mockStore(initialState);
 
@@ -39,7 +45,7 @@ describe("GameControls Component", () => {
     // Check if the correct actions were dispatched
     expect(store.dispatch).toHaveBeenCalledWith(resetGame());
     expect(store.dispatch).toHaveBeenCalledWith(resetPlayersHealth());
-    expect(store.dispatch).toHaveBeenCalledWith(resetLogoPosition());
+    expect(store.dispatch).toHaveBeenCalledWith(resetLogo()); // Expect resetLogo
 
     // Verify the number of dispatches if needed
     expect(store.dispatch).toHaveBeenCalledTimes(3);

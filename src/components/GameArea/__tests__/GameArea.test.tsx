@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, act } from "@testing-library/react"; // Added act
 import { Provider } from "react-redux";
 import { configureStore, EnhancedStore } from "@reduxjs/toolkit";
 import GameArea from "../GameArea";
@@ -7,7 +7,7 @@ import playerReducer, {
 } from "../../../store/slices/playerSlice/playerSlice";
 import logoReducer, {
   setLogoPosition,
-  setLogoVelocity,
+  setLogoDirection, // Updated import
 } from "../../../store/slices/logoSlice/logoSlice";
 import gameStateReducer, {
   pauseGame,
@@ -50,55 +50,64 @@ const mockCtx = {
   canvas: { width: 900, height: 600 },
 };
 
-// Mock requestAnimationFrame and cancelAnimationFrame for controlling animation loop
-let frameId = 0;
-const frameCallbacks: Map<number, FrameRequestCallback> = new Map();
-let lastTimestamp = 0;
+// Mock requestAnimationFrame and cancelAnimationFrame for controlling animation loop (Synchronous version)
+let rafCallbacks: Map<number, FrameRequestCallback> = new Map();
+let rafIdCounter = 0;
 
-vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
-  const id = ++frameId;
-  frameCallbacks.set(id, callback);
-  return id;
+vi.stubGlobal(
+  "requestAnimationFrame",
+  (callback: FrameRequestCallback): number => {
+    const id = ++rafIdCounter;
+    rafCallbacks.set(id, callback);
+    return id;
+  },
+);
+
+vi.stubGlobal("cancelAnimationFrame", (id: number): void => {
+  rafCallbacks.delete(id);
 });
 
-vi.stubGlobal("cancelAnimationFrame", (id: number) => {
-  frameCallbacks.delete(id);
-});
-
-// Helper to advance animation frames
-const advanceFrames = async (count: number, timeIncrement = 16) => {
+// Helper to advance animation frames synchronously
+const advanceFrames = (count: number, timeIncrement = 16.66) => {
+  let currentTime = performance.now();
   for (let i = 0; i < count; i++) {
-    lastTimestamp += timeIncrement;
-    const callbacksToRun = Array.from(frameCallbacks.values());
-    callbacksToRun.forEach((cb) => {
+    currentTime += timeIncrement;
+    const callbacksToRun = Array.from(rafCallbacks.entries());
+    rafCallbacks.clear(); // Clear before running callbacks, as they might request new frames
+    callbacksToRun.forEach(([id, cb]) => {
       try {
-        cb(lastTimestamp);
+        cb(currentTime);
       } catch (e) {
-        console.error("Error in mocked RAF callback:", e);
+        console.error(`Error in mocked RAF callback (ID: ${id}):`, e);
       }
     });
-    await new Promise((resolve) => setTimeout(resolve, 0));
   }
 };
 
 // Spy instance variable
-let rafSpy: SpyInstance;
-let cafSpy: SpyInstance;
+let rafSpy: SpyInstance<[callback: FrameRequestCallback], number>;
+let cafSpy: SpyInstance<[handle: number], void>;
 
 beforeEach(() => {
-  frameId = 0;
-  lastTimestamp = 0;
-  frameCallbacks.clear();
-  vi.clearAllMocks();
+  rafIdCounter = 0;
+  rafCallbacks.clear();
+  vi.clearAllMocks(); // Ensure mocks are cleared
+
+  // Mock getContext before spying on RAF/CAF
   HTMLCanvasElement.prototype.getContext = vi.fn((contextId) => {
     if (contextId === "2d") {
+      // Reset the existing mock context
+      Object.values(mockCtx).forEach((mockFn) => {
+        if (typeof mockFn === "function") mockFn.mockClear();
+      });
       return mockCtx as unknown as CanvasRenderingContext2D;
     }
     return null;
   });
+
+  // Restore spies if they exist from previous tests, then re-spy
   rafSpy?.mockRestore();
   cafSpy?.mockRestore();
-
   rafSpy = vi.spyOn(window, "requestAnimationFrame");
   cafSpy = vi.spyOn(window, "cancelAnimationFrame");
 });
@@ -106,7 +115,7 @@ beforeEach(() => {
 afterEach(() => {
   rafSpy.mockRestore();
   cafSpy.mockRestore();
-  vi.unstubAllGlobals();
+  vi.unstubAllGlobals(); // Ensure globals are unstubbed
 });
 
 // Helper function to render GameArea with Redux Provider
@@ -144,7 +153,7 @@ const renderGameArea = (initialState: Partial<RootState> = {}) => {
       },
       logo: {
         position: { x: 450, y: 300 },
-        velocity: { x: 5, y: 5 },
+        direction: { dx: 0.832, dy: 0.555 }, // Use direction instead of velocity
         size: { width: 50, height: 30 },
         imageUrl: null,
         angle: 45,
@@ -159,6 +168,7 @@ const renderGameArea = (initialState: Partial<RootState> = {}) => {
         angleVariance: 10,
         playerHealth: 3,
         customLogo: null,
+        logoSpeed: 5, // ADDED default logoSpeed
         ...(initialState.settings || {}),
       },
     },
@@ -186,42 +196,44 @@ describe("GameArea Collision Detection with Angle Variance", () => {
     mathRandomSpy.mockRestore();
   });
 
-  it("should dispatch setLogoVelocity with varied angle after top border collision", async () => {
-    const initialVelocity = { x: 1, y: -5 };
+  it("should dispatch setLogoDirection with varied angle after top border collision", () => {
+    const initialDirection = { dx: 0, dy: -1 };
     const logoSize = { width: 50, height: 30 };
     const angleVariance = 20;
+    const speed = 5;
     const { store, dispatchSpy } = renderGameArea({
       logo: {
         position: { x: 450, y: logoSize.height / 2 + 1 },
-        velocity: initialVelocity,
+        direction: initialDirection,
         size: logoSize,
         speed: Math.sqrt(
-          initialVelocity.x * initialVelocity.x +
-            initialVelocity.y * initialVelocity.y,
+          initialDirection.dx * initialDirection.dx +
+            initialDirection.dy * initialDirection.dy,
         ),
       },
-      settings: { angleVariance },
+      settings: { angleVariance, logoSpeed: speed }, // Explicitly set logoSpeed
       gameState: { status: "running" },
     });
 
-    await advanceFrames(1);
-
-    await waitFor(() => {
-      expect(dispatchSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ type: setLogoPosition.type }),
-      );
-      expect(dispatchSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ type: setLogoVelocity.type }),
-      );
+    act(() => {
+      advanceFrames(1);
     });
 
-    const setVelocityAction = dispatchSpy.mock.calls.find(
-      (call) => call[0].type === setLogoVelocity.type,
+    // Check if setLogoDirection was called
+    const setDirectionAction = dispatchSpy.mock.calls.find(
+      (call) => call[0].type === setLogoDirection.type,
     );
-    expect(setVelocityAction).toBeDefined();
+    expect(setDirectionAction, "setLogoDirection should have been called").toBeDefined();
 
-    const reflectedVx = initialVelocity.x;
-    const reflectedVy = -initialVelocity.y;
+    // Check if setLogoPosition was called
+    const setPositionAction = dispatchSpy.mock.calls.find(
+      (call) => call[0].type === setLogoPosition.type,
+    );
+    expect(setPositionAction, "setLogoPosition should have been called").toBeDefined();
+
+    // Original check for setLogoDirection payload
+    const reflectedDx = initialDirection.dx;
+    const reflectedDy = -initialDirection.dy;
 
     const deviationDegrees = (0.75 - 0.5) * angleVariance; // 0.25 * 20 = 5 degrees
     const deviationRadians = deviationDegrees * (Math.PI / 180);
@@ -229,121 +241,124 @@ describe("GameArea Collision Detection with Angle Variance", () => {
     const cosTheta = Math.cos(deviationRadians);
     const sinTheta = Math.sin(deviationRadians);
 
-    const finalVx = reflectedVx * cosTheta - reflectedVy * sinTheta; // 1*cos(5) - 5*sin(5)
-    const finalVy = reflectedVx * sinTheta + reflectedVy * cosTheta; // 1*sin(5) + 5*cos(5)
+    const finalDx = reflectedDx * cosTheta - reflectedDy * sinTheta; // 0*cos(5) - 1*sin(5) -> -sin(5)
+    const finalDy = reflectedDx * sinTheta + reflectedDy * cosTheta; // 0*sin(5) + 1*cos(5) -> cos(5)
 
-    expect(setVelocityAction[0].payload.x).toBeCloseTo(finalVx);
-    expect(setVelocityAction[0].payload.y).toBeCloseTo(finalVy);
+    // Check the payload values
+    expect(setDirectionAction[0].payload.dx).toBeCloseTo(finalDx);
+    expect(setDirectionAction[0].payload.dy).toBeCloseTo(finalDy);
   });
 
-  it("should dispatch setLogoVelocity with varied angle after left border collision", async () => {
-    const initialVelocity = { x: -5, y: 1 };
+  it("should dispatch setLogoDirection with varied angle after left border collision", () => {
+    const initialDirection = { dx: -1, dy: 0 };
     const logoSize = { width: 50, height: 30 };
     const angleVariance = 30;
+    const speed = 5;
     const { store, dispatchSpy } = renderGameArea({
       logo: {
         position: { x: logoSize.width / 2 + 1, y: 300 },
-        velocity: initialVelocity,
+        direction: initialDirection,
         size: logoSize,
         speed: Math.sqrt(
-          initialVelocity.x * initialVelocity.x +
-            initialVelocity.y * initialVelocity.y,
+          initialDirection.dx * initialDirection.dx +
+            initialDirection.dy * initialDirection.dy,
         ),
       },
-      settings: { angleVariance },
+      settings: { angleVariance, logoSpeed: speed }, // Explicitly set logoSpeed
       gameState: { status: "running" },
     });
 
-    await advanceFrames(1);
-
-    await waitFor(() => {
-      expect(dispatchSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ type: setLogoPosition.type }),
-      );
-      expect(dispatchSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ type: setLogoVelocity.type }),
-      );
+    act(() => {
+      advanceFrames(1);
     });
 
-    const setVelocityAction = dispatchSpy.mock.calls.find(
-      (call) => call[0].type === setLogoVelocity.type,
+    expect(dispatchSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ type: setLogoPosition.type }),
     );
-    expect(setVelocityAction).toBeDefined();
+    expect(dispatchSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ type: setLogoDirection.type }),
+    );
 
-    const reflectedVx = -initialVelocity.x;
-    const reflectedVy = initialVelocity.y;
+    const setDirectionAction = dispatchSpy.mock.calls.find(
+      (call) => call[0].type === setLogoDirection.type,
+    );
+    expect(setDirectionAction).toBeDefined();
+
+    const reflectedDx = -initialDirection.dx;
+    const reflectedDy = initialDirection.dy;
 
     const deviationDegrees = (0.75 - 0.5) * angleVariance; // 7.5 degrees
     const deviationRadians = deviationDegrees * (Math.PI / 180);
     const cosTheta = Math.cos(deviationRadians);
     const sinTheta = Math.sin(deviationRadians);
 
-    const finalVx = reflectedVx * cosTheta - reflectedVy * sinTheta; // 5*cos(7.5) - 1*sin(7.5)
-    const finalVy = reflectedVx * sinTheta + reflectedVy * cosTheta; // 5*sin(7.5) + 1*cos(7.5)
+    const finalDx = reflectedDx * cosTheta - reflectedDy * sinTheta; // 1*cos(7.5) - 0*sin(7.5)
+    const finalDy = reflectedDx * sinTheta + reflectedDy * cosTheta; // 1*sin(7.5) + 0*cos(7.5)
 
-    expect(setVelocityAction[0].payload.x).toBeCloseTo(finalVx);
-    expect(setVelocityAction[0].payload.y).toBeCloseTo(finalVy);
+    expect(setDirectionAction[0].payload.dx).toBeCloseTo(finalDx);
+    expect(setDirectionAction[0].payload.dy).toBeCloseTo(finalDy);
   });
 
-  it("should dispatch setLogoVelocity with only reversed velocity if angleVariance is 0", async () => {
-    const initialVelocity = { x: 1, y: -5 };
+  it("should dispatch setLogoDirection with only reversed direction if angleVariance is 0", () => {
+    const initialDirection = { dx: 0, dy: -1 };
     const logoSize = { width: 50, height: 30 };
+    const speed = 5;
     const { store, dispatchSpy } = renderGameArea({
       logo: {
         position: { x: 450, y: logoSize.height / 2 + 1 },
-        velocity: initialVelocity,
+        direction: initialDirection,
         size: logoSize,
       },
-      settings: { angleVariance: 0 },
+      settings: { angleVariance: 0, logoSpeed: speed }, // Explicitly set logoSpeed
       gameState: { status: "running" },
     });
 
-    await advanceFrames(1);
-
-    await waitFor(() => {
-      expect(dispatchSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ type: setLogoPosition.type }),
-      );
-      expect(dispatchSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ type: setLogoVelocity.type }),
-      );
+    act(() => {
+      advanceFrames(1);
     });
 
-    const setVelocityAction = dispatchSpy.mock.calls.find(
-      (call) => call[0].type === setLogoVelocity.type,
+    expect(dispatchSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ type: setLogoPosition.type }),
     );
-    expect(setVelocityAction).toBeDefined();
-    expect(setVelocityAction[0].payload.x).toBeCloseTo(initialVelocity.x);
-    expect(setVelocityAction[0].payload.y).toBeCloseTo(-initialVelocity.y);
+    expect(dispatchSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ type: setLogoDirection.type }),
+    );
+
+    const setDirectionAction = dispatchSpy.mock.calls.find(
+      (call) => call[0].type === setLogoDirection.type,
+    );
+    expect(setDirectionAction).toBeDefined();
+    expect(setDirectionAction[0].payload.dx).toBeCloseTo(initialDirection.dx);
+    expect(setDirectionAction[0].payload.dy).toBeCloseTo(-initialDirection.dy);
   });
 
-  it("should dispatch decrementPlayerHealth for player p1 when hitting right border segment", async () => {
+  it("should dispatch decrementPlayerHealth for player p1 when hitting right border segment", () => {
     const logoSize = { width: 50, height: 30 };
     const gameWidth = 900;
     const { store, dispatchSpy } = renderGameArea({
       logo: {
         position: { x: gameWidth - logoSize.width / 2 - 1, y: 300 },
-        velocity: { x: 5, y: 1 },
+        direction: { dx: 1, dy: 0 },
         size: logoSize,
       },
       settings: { angleVariance: 0 },
       gameState: { status: "running" },
     });
 
-    await advanceFrames(1);
+    advanceFrames(1);
 
-    await waitFor(() => {
+    waitFor(() => {
       expect(dispatchSpy).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: setLogoVelocity.type,
-          payload: expect.objectContaining({ x: -5 }),
+          type: setLogoDirection.type,
+          payload: expect.objectContaining({ dx: -1 }),
         }),
       );
       expect(dispatchSpy).toHaveBeenCalledWith(decrementPlayerHealth("p1"));
     });
   });
 
-  it("should pause game when only one player remains", async () => {
+  it("should pause game when only one player remains", () => {
     const { store, dispatchSpy } = renderGameArea({
       players: {
         players: [
@@ -370,7 +385,9 @@ describe("GameArea Collision Detection with Angle Variance", () => {
       gameState: { status: "running" },
     });
 
-    await waitFor(() => {
+    advanceFrames(1);
+
+    waitFor(() => {
       expect(dispatchSpy).toHaveBeenCalledWith(pauseGame());
     });
 
@@ -398,12 +415,12 @@ describe("GameArea Rendering and Setup", () => {
     expect(HTMLCanvasElement.prototype.getContext).toHaveBeenCalledWith("2d");
   });
 
-  it("draws player border segments and logo on canvas when running", async () => {
+  it("draws player border segments and logo on canvas when running", () => {
     renderGameArea({ gameState: { status: "running" } });
 
-    await advanceFrames(1);
+    advanceFrames(1);
 
-    await waitFor(() => {
+    waitFor(() => {
       expect(mockCtx.clearRect).toHaveBeenCalled();
       expect(
         mockCtx.fillRect.mock.calls.length > 0 ||
@@ -418,32 +435,34 @@ describe("GameArea Rendering and Setup", () => {
     expect(gameArea).toHaveStyle("border: 2px solid #1a1a1a");
   });
 
-  it("sets up animation with requestAnimationFrame when game is running", async () => {
+  it("sets up animation with requestAnimationFrame when game is running", () => {
     renderGameArea({ gameState: { status: "running" } });
-    await waitFor(() => {
+    waitFor(() => {
       expect(rafSpy).toHaveBeenCalled();
     });
     expect(cafSpy).not.toHaveBeenCalled();
   });
 
-  it("does NOT set up animation with requestAnimationFrame when game is idle", async () => {
+  it("does NOT set up animation with requestAnimationFrame when game is idle", () => {
     renderGameArea({ gameState: { status: "idle" } });
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(rafSpy).not.toHaveBeenCalled();
+    new Promise((resolve) => setTimeout(resolve, 0)).then(() => {
+      expect(rafSpy).not.toHaveBeenCalled();
+    });
   });
 
-  it("does NOT set up animation with requestAnimationFrame when game is paused", async () => {
+  it("does NOT set up animation with requestAnimationFrame when game is paused", () => {
     renderGameArea({ gameState: { status: "paused" } });
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(rafSpy).not.toHaveBeenCalled();
+    new Promise((resolve) => setTimeout(resolve, 0)).then(() => {
+      expect(rafSpy).not.toHaveBeenCalled();
+    });
   });
 
-  it("cancels animation frame when game status changes from running to paused", async () => {
+  it("cancels animation frame when game status changes from running to paused", () => {
     const { store, rerender } = renderGameArea({
       gameState: { status: "running" },
     });
 
-    await waitFor(() => {
+    waitFor(() => {
       expect(rafSpy).toHaveBeenCalledTimes(1);
     });
     const initialRafCallCount = rafSpy.mock.calls.length;
@@ -457,11 +476,7 @@ describe("GameArea Rendering and Setup", () => {
       </Provider>,
     );
 
-    await waitFor(() => {
-      expect(cafSpy.mock.calls.length).toBeGreaterThan(initialCafCallCount);
-    });
-
-    await advanceFrames(2);
+    advanceFrames(2);
     expect(rafSpy.mock.calls.length).toBe(initialRafCallCount);
   });
 

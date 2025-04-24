@@ -4,6 +4,7 @@ import settingsReducer, {
   setPlayerHealth,
   setCustomLogo,
   resetSettings,
+  setLogoSpeed, // Import the new action
   SettingsState,
 } from "../settingsSlice";
 
@@ -12,6 +13,7 @@ describe("settings slice", () => {
     angleVariance: 10,
     playerHealth: 3,
     customLogo: null,
+    logoSpeed: 5, // Add initial logo speed
   };
 
   it("should handle initial state", () => {
@@ -45,11 +47,17 @@ describe("settings slice", () => {
     expect(actual.customLogo).toBeNull();
   });
 
+  it("should handle setLogoSpeed", () => {
+    const actual = settingsReducer(initialState, setLogoSpeed(8));
+    expect(actual.logoSpeed).toEqual(8);
+  });
+
   it("should handle resetSettings", () => {
     const modifiedState: SettingsState = {
-      angleVariance: 30,
-      playerHealth: 1,
-      customLogo: "path/to/another/logo.png",
+      angleVariance: 20,
+      playerHealth: 5,
+      customLogo: "test.png",
+      logoSpeed: 10, // Include logoSpeed in modified state
     };
     const actual = settingsReducer(modifiedState, resetSettings());
     expect(actual).toEqual(initialState);

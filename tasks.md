@@ -19,7 +19,7 @@
 ### Settings
 
 - [x] Create settings slice for game configuration
-  - [x] Define state shape (angleVariance, playerHealth, customLogo) (Low)
+  - [x] Define state shape (angleVariance, playerHealth, customLogo, logoSpeed) (Low)
   - [x] Implement reducers for updating settings (Low)
   - [x] Write unit tests for settings slice (Medium)
   - [ ] Implement logo upload and preview (Medium)
@@ -27,6 +27,10 @@
     - [x] Connect slider in ControlPanel to dispatch update action (Low)
     - [x] Display current variance value in ControlPanel (Low)
   - [ ] Add player health controls (Low)
+  - [x] Add logo speed controls (Low)
+    - [x] Add slider to ControlPanel for logo speed (Low)
+    - [x] Connect slider to dispatch update action for logo speed (Low)
+    - [x] Display current speed value in ControlPanel (Low)
 
 ### Game Controls
 
