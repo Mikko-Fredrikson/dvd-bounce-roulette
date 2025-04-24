@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import gsap from "gsap"; // <-- Import GSAP
 import { RootState } from "../../store";
 import {
   createBorderSides,
@@ -72,7 +73,7 @@ const GameArea: React.FC<GameAreaProps> = ({
   // Animation state
   const [offset, setOffset] = useState(0);
   const animationRef = useRef<number | null>(null);
-  const gameAreaRef = useRef<HTMLDivElement>(null);
+  const gameAreaRef = useRef<HTMLDivElement>(null); // Ref for the element to shake
   const nameBoxContainerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [particles, setParticles] = useState<Particle[]>([]);
@@ -316,6 +317,28 @@ const GameArea: React.FC<GameAreaProps> = ({
       collided = true;
       directionNeedsUpdate = true;
     }
+
+    // --- Screen Shake on Collision --- START ---
+    if (collided && gameAreaRef.current) {
+      gsap.killTweensOf(gameAreaRef.current); // Stop any previous shake
+      gsap.fromTo(
+        gameAreaRef.current,
+        { x: 0, y: 0 }, // Start from no offset
+        {
+          duration: 0.07, // Duration of each jiggle
+          x: () => Math.random() * 6 - 3, // Random X offset (-3px to 3px)
+          y: () => Math.random() * 6 - 3, // Random Y offset (-3px to 3px)
+          repeat: 4, // Number of jiggles
+          yoyo: true, // Return towards start position
+          ease: "power1.inOut",
+          onComplete: () => {
+            // Ensure the element is perfectly reset after shaking
+            gsap.set(gameAreaRef.current, { x: 0, y: 0 });
+          },
+        },
+      );
+    }
+    // --- Screen Shake on Collision --- END ---
 
     if (directionNeedsUpdate && angleVariance > 0) {
       const deviationDegrees = (Math.random() - 0.5) * angleVariance;
