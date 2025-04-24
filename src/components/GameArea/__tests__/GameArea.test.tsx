@@ -42,12 +42,19 @@ const mockCtx = {
   stroke: vi.fn(),
   fillRect: vi.fn(),
   fill: vi.fn(), // Add the missing fill mock
+  arc: vi.fn(), // <-- Add the missing arc mock
   save: vi.fn(),
   translate: vi.fn(),
   rotate: vi.fn(),
   restore: vi.fn(),
   ellipse: vi.fn(),
   canvas: { width: 900, height: 600 },
+  // Add mocks for properties accessed in drawGameElements
+  strokeStyle: '',
+  lineWidth: 0,
+  globalAlpha: 1,
+  lineCap: 'butt',
+  drawImage: vi.fn(), // Add drawImage mock
 };
 
 // Mock requestAnimationFrame and cancelAnimationFrame for controlling animation loop (Synchronous version)

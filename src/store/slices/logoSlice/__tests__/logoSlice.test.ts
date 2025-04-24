@@ -23,14 +23,15 @@ const initialVelocity = { x: 5, y: 3 };
 const initialDirection = normalize(initialVelocity);
 const DEFAULT_LOGO_SIZE: Size = { width: 80, height: 50 };
 const DEFAULT_INITIAL_POSITION: Vector2D = { x: 0, y: 0 };
+const DEFAULT_COLOR = "blue"; // Match the slice definition
 
 const expectedInitialState: LogoState = {
   position: DEFAULT_INITIAL_POSITION,
   direction: initialDirection,
   size: DEFAULT_LOGO_SIZE,
   imageUrl: null,
-  color: "#FFFFFF",
-  defaultColor: "#FFFFFF",
+  color: DEFAULT_COLOR, // Use the constant
+  defaultColor: DEFAULT_COLOR, // Use the constant
 };
 
 describe("logoSlice reducer", () => {
