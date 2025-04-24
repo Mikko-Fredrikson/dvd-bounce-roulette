@@ -20,12 +20,15 @@ const initialDirection = normalizeVector(initialVelocity);
 
 const DEFAULT_LOGO_SIZE: Size = { width: 80, height: 50 }; // Example size
 const DEFAULT_INITIAL_POSITION: Vector2D = { x: 0, y: 0 }; // Default initial position
+const DEFAULT_COLOR = "blue"; // Default color for the logo
 
 const initialState: LogoState = {
   position: DEFAULT_INITIAL_POSITION, // Initial position
   direction: initialDirection, // Store normalized direction vector
   size: DEFAULT_LOGO_SIZE,
   imageUrl: null, // Optional image URL
+  color: DEFAULT_COLOR, // Current color of the logo
+  defaultColor: DEFAULT_COLOR, // Default color to reset to
 };
 
 const logoSlice = createSlice({
@@ -71,10 +74,18 @@ const logoSlice = createSlice({
     setLogoImage(state, action: PayloadAction<string | null>) {
       state.imageUrl = action.payload;
     },
+    setLogoColor(state, action: PayloadAction<string | null | undefined>) {
+      // Only update if the payload is a valid color string
+      if (action.payload && typeof action.payload === "string") {
+        state.color = action.payload;
+      }
+    },
     resetLogo(state) {
       // Reset position to initial position, keep initial direction
       state.position = DEFAULT_INITIAL_POSITION;
       state.direction = initialDirection;
+      // Reset color to the stored default color
+      state.color = state.defaultColor;
     },
   },
 });
@@ -87,6 +98,7 @@ export const {
   reverseVelocityY,
   setLogoSize,
   setLogoImage,
+  setLogoColor, // Export the new action
   resetLogo,
 } = logoSlice.actions;
 

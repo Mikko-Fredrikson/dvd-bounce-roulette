@@ -101,10 +101,10 @@
 
 - [ ] Visual Effects
 
-  - [ ] Change logo color to match the last hit player's color (Low)
-  - [ ] Add particle effects on collision (Medium)
-    - [ ] Particles should match the color of the hit player segment (Low)
-  - [ ] Add small impact visual effect at the collision point (Low)
+  - [x] Change logo color to match the last hit player's color (Low)
+  - [x] Add particle effects on collision (Medium)
+    - [x] Particles should match the color of the hit player segment (Low) - Updated: Mix player and logo colors
+  - [x] Add small impact visual effect at the collision point (Low) - Updated: Implemented as box-shadow pulse
   - [ ] Add a subtle trail effect to the moving logo (Medium)
   - [ ] Add screen shake on collision (Low)
   - [ ] Add border segment hit/elimination animations (Medium)

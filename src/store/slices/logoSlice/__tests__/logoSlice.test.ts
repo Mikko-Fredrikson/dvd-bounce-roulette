@@ -1,13 +1,14 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import logoReducer, {
   setLogoPosition,
-  setLogoDirection, // Updated import
+  setLogoDirection,
   setLogoSize,
-  setLogoImage, // Renamed from setLogoImageUrl
+  setLogoImage,
   initializeLogoPosition,
   reverseVelocityX,
   reverseVelocityY,
-  resetLogo, // Updated import
+  resetLogo,
+  setLogoColor,
 } from "../logoSlice";
 import type { LogoState, Vector2D, Size } from "../types";
 
@@ -28,9 +29,17 @@ const expectedInitialState: LogoState = {
   direction: initialDirection,
   size: DEFAULT_LOGO_SIZE,
   imageUrl: null,
+  color: "#FFFFFF",
+  defaultColor: "#FFFFFF",
 };
 
 describe("logoSlice reducer", () => {
+  let currentState: LogoState;
+
+  beforeEach(() => {
+    currentState = { ...expectedInitialState };
+  });
+
   it("should handle initial state", () => {
     expect(logoReducer(undefined, { type: "unknown" })).toEqual(
       expectedInitialState,
@@ -144,6 +153,7 @@ describe("logoSlice reducer", () => {
       direction: normalize({ x: -1, y: 1 }), // Simulate a changed direction
       size: { width: 10, height: 10 },
       imageUrl: "test.png",
+      color: "#FF0000",
     };
     const nextState = logoReducer(modifiedState, resetLogo());
     // Position should reset to default initial (0,0)
@@ -154,5 +164,28 @@ describe("logoSlice reducer", () => {
     // Size and imageUrl should remain unchanged based on current resetLogo logic
     expect(nextState.size).toEqual(modifiedState.size);
     expect(nextState.imageUrl).toEqual(modifiedState.imageUrl);
+    // Color should reset to default color
+    expect(nextState.color).toEqual(expectedInitialState.defaultColor);
+  });
+
+  it("should handle setLogoColor", () => {
+    const newColor = "#FF0000"; // Example player color
+    const action = setLogoColor(newColor);
+    const nextState = logoReducer(currentState, action);
+    expect(nextState.color).toBe(newColor);
+  });
+
+  it("should not change color if setLogoColor receives null or undefined", () => {
+    // Test with null
+    const actionNull = setLogoColor(null as any);
+    let nextState = logoReducer(currentState, actionNull);
+    // Expect color to remain the initial default color
+    expect(nextState.color).toBe(expectedInitialState.defaultColor);
+
+    // Test with undefined
+    const actionUndefined = setLogoColor(undefined as any);
+    nextState = logoReducer(currentState, actionUndefined);
+    // Expect color to remain the initial default color
+    expect(nextState.color).toBe(expectedInitialState.defaultColor);
   });
 });

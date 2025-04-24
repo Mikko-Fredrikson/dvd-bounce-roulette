@@ -15,10 +15,21 @@ import {
   initializeLogoPosition,
   setLogoPosition,
   setLogoDirection,
+  setLogoColor,
 } from "../../store/slices/logoSlice/logoSlice";
 import { decrementPlayerHealth } from "../../store/slices/playerSlice/playerSlice";
 import { PlayerBorderSegments } from "../../utils/borderUtils/types";
 import { pauseGame } from "../../store/slices/gameStateSlice/gameStateSlice";
+import { createParticles } from "../../utils/particleUtils/particleManager";
+import type { Particle } from "../../utils/particleUtils/types";
+
+// Define type for the impact pulse effect state
+interface ImpactPulse {
+  color: string;
+  opacity: number;
+  startTime: number;
+  duration: number;
+}
 
 interface GameAreaProps {
   width?: number;
@@ -64,6 +75,8 @@ const GameArea: React.FC<GameAreaProps> = ({
   const gameAreaRef = useRef<HTMLDivElement>(null);
   const nameBoxContainerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [particles, setParticles] = useState<Particle[]>([]);
+  const [impactPulse, setImpactPulse] = useState<ImpactPulse | null>(null);
 
   // Calculate border segments for active players
   const sides = createBorderSides(width, height);
@@ -87,33 +100,30 @@ const GameArea: React.FC<GameAreaProps> = ({
    */
   const drawLogo = React.useCallback(
     (ctx: CanvasRenderingContext2D) => {
-      const { position, size } = logo;
+      const { position, size, color } = logo;
       const centerX = position.x;
       const centerY = position.y;
 
       if (logoImage && logoImage.complete && logoImage.naturalWidth > 0) {
-        // Image is loaded and valid
         const imgWidth = logoImage.naturalWidth;
         const imgHeight = logoImage.naturalHeight;
         const targetWidth = size.width;
         const targetHeight = size.height;
 
-        // Calculate scale factor to fit within target dimensions while preserving aspect ratio
         const scaleX = targetWidth / imgWidth;
         const scaleY = targetHeight / imgHeight;
-        const scale = Math.min(scaleX, scaleY); // Use the smaller scale factor to fit entirely
+        const scale = Math.min(scaleX, scaleY);
 
         const drawWidth = imgWidth * scale;
         const drawHeight = imgHeight * scale;
-        const drawX = centerX - drawWidth / 2; // Center the image
+        const drawX = centerX - drawWidth / 2;
         const drawY = centerY - drawHeight / 2;
 
         ctx.drawImage(logoImage, drawX, drawY, drawWidth, drawHeight);
       } else if (!customLogo) {
-        // Draw a default ellipse if no custom logo is set
-        const radiusX = size.width / 2; // Horizontal radius
-        const radiusY = size.height / 2; // Vertical radius
-        ctx.fillStyle = "blue"; // Default logo color
+        const radiusX = size.width / 2;
+        const radiusY = size.height / 2;
+        ctx.fillStyle = color;
         ctx.beginPath();
         ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
         ctx.fill();
@@ -123,28 +133,41 @@ const GameArea: React.FC<GameAreaProps> = ({
   );
 
   /**
-   * Draws player border segments and the logo on canvas
+   * Draws particles on the canvas
+   */
+  const drawParticles = React.useCallback(
+    (ctx: CanvasRenderingContext2D) => {
+      particles.forEach((p) => {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = Math.max(0, p.opacity);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1.0;
+    },
+    [particles],
+  );
+
+  /**
+   * Draws player border segments, the logo, and particles on canvas
    */
   const drawGameElements = React.useCallback(
     (ctx: CanvasRenderingContext2D) => {
-      // Clear the entire canvas before drawing
       ctx.clearRect(0, 0, width, height);
 
-      // Draw the logo first (so borders appear on top if overlapping)
       drawLogo(ctx);
 
-      // Draw player borders
       playerBorderSegments.forEach((playerSegment) => {
         const { segments, playerColor } = playerSegment;
 
         ctx.strokeStyle = playerColor;
-        ctx.lineWidth = 15; // Border thickness
+        ctx.lineWidth = 15;
 
         segments.forEach((segment) => {
           const { side, startPosition, length } = segment;
           ctx.beginPath();
 
-          // Draw according to which side the segment is on
           switch (side.name) {
             case "top":
               ctx.moveTo(startPosition, 0);
@@ -167,109 +190,153 @@ const GameArea: React.FC<GameAreaProps> = ({
           ctx.stroke();
         });
       });
+
+      drawParticles(ctx);
     },
-    [playerBorderSegments, width, height, drawLogo],
+    [playerBorderSegments, width, height, drawLogo, drawParticles],
   );
 
   // Combined animation loop for border rotation and logo movement
   const animate = React.useCallback(() => {
-    // Only run animation logic if the game is running
     if (gameStatus !== "running") {
-      // If paused or idle, ensure the animation frame is cancelled
       if (animationRef.current !== null) {
         cancelAnimationFrame(animationRef.current);
-        animationRef.current = null; // Clear the ref
+        animationRef.current = null;
       }
-      return; // Stop the loop if not running
+      return;
     }
 
-    // Update border offset
+    const now = performance.now();
+
+    // --- Particle Update Logic --- START ---
+    const updatedParticles = particles
+      .map((p) => {
+        const ageIncrement = 16.67;
+        const newAge = p.age + ageIncrement;
+        const lifeRatio = Math.min(1, newAge / p.lifetime);
+        return {
+          ...p,
+          x: p.x + p.vx,
+          y: p.y + p.vy,
+          age: newAge,
+          opacity: 1 - lifeRatio,
+        };
+      })
+      .filter((p) => p.age < p.lifetime);
+    // --- Particle Update Logic --- END ---
+
+    // --- Trail Particle Creation --- START ---
+    const trailParticleCount = 2;
+    const trailParticles = createParticles(
+      trailParticleCount,
+      logo.position.x,
+      logo.position.y,
+      [logo.color],
+      {
+        minSpeed: 0.5,
+        maxSpeed: 1.5,
+        minSize: 1,
+        maxSize: 3,
+        lifetime: 300,
+      },
+    );
+    setParticles((prevParticles) => [
+      ...updatedParticles,
+      ...trailParticles,
+    ]);
+    // --- Trail Particle Creation --- END ---
+
+    let currentPulse = impactPulse;
+    if (currentPulse) {
+      const elapsed = now - currentPulse.startTime;
+      if (elapsed >= currentPulse.duration) {
+        setImpactPulse(null);
+        currentPulse = null;
+      } else {
+        const progress = elapsed / currentPulse.duration;
+        const opacity = Math.sin(progress * Math.PI) * 0.8;
+        if (Math.abs(opacity - currentPulse.opacity) > 0.01) {
+          setImpactPulse({ ...currentPulse, opacity });
+        }
+      }
+    }
+
     setOffset((prevOffset) => (prevOffset + animationSpeed) % perimeter);
 
-    // Get current direction and apply speed from settings
     const currentDx = logo.direction.dx;
     const currentDy = logo.direction.dy;
-    const vx = currentDx * logoSpeed; // Calculate velocity for this frame
+    const vx = currentDx * logoSpeed;
     const vy = currentDy * logoSpeed;
 
-    // Calculate next logo position based on calculated velocity
     let nextX = logo.position.x + vx;
     let nextY = logo.position.y + vy;
 
-    // Collision detection with game area borders
     const logoHalfWidth = logo.size.width / 2;
     const logoHalfHeight = logo.size.height / 2;
 
     let collisionSide: "top" | "right" | "bottom" | "left" | null = null;
-    let collisionPoint: number | null = null;
+    let collisionCoords: { x: number; y: number } | null = null;
     let collided = false;
-    let finalDx = currentDx; // Start with current direction
+    let finalDx = currentDx;
     let finalDy = currentDy;
     let directionNeedsUpdate = false;
 
-    // Check horizontal collision (left/right walls)
     if (nextX - logoHalfWidth <= 0) {
-      finalDx = -currentDx; // Reflect X
-      nextX = logoHalfWidth; // Prevent sticking
+      finalDx = -currentDx;
+      nextX = logoHalfWidth;
       collisionSide = "left";
-      collisionPoint = nextY;
+      collisionCoords = { x: 0, y: nextY };
       collided = true;
       directionNeedsUpdate = true;
     } else if (nextX + logoHalfWidth >= width) {
-      finalDx = -currentDx; // Reflect X
-      nextX = width - logoHalfWidth; // Prevent sticking
+      finalDx = -currentDx;
+      nextX = width - logoHalfWidth;
       collisionSide = "right";
-      collisionPoint = nextY;
+      collisionCoords = { x: width, y: nextY };
       collided = true;
       directionNeedsUpdate = true;
     }
 
-    // Check vertical collision (top/bottom walls)
-    let currentFinalDx = finalDx; // Store dx before vertical check potentially modifies it again (corner case)
+    let currentFinalDx = finalDx;
     if (nextY - logoHalfHeight <= 0) {
-      finalDy = -currentDy; // Reflect Y
-      finalDx = currentFinalDx; // Use Dx from after horizontal check
-      nextY = logoHalfHeight; // Prevent sticking
+      finalDy = -currentDy;
+      finalDx = currentFinalDx;
+      nextY = logoHalfHeight;
       if (!collided) {
         collisionSide = "top";
-        collisionPoint = nextX;
+        collisionCoords = { x: nextX, y: 0 };
       }
       collided = true;
       directionNeedsUpdate = true;
     } else if (nextY + logoHalfHeight >= height) {
-      finalDy = -currentDy; // Reflect Y
-      finalDx = currentFinalDx; // Use Dx from after horizontal check
-      nextY = height - logoHalfHeight; // Prevent sticking
+      finalDy = -currentDy;
+      finalDx = currentFinalDx;
+      nextY = height - logoHalfHeight;
       if (!collided) {
         collisionSide = "bottom";
-        collisionPoint = nextX;
+        collisionCoords = { x: nextX, y: height };
       }
       collided = true;
       directionNeedsUpdate = true;
     }
 
-    // Apply angle variance if a collision occurred and direction was reflected
     if (directionNeedsUpdate && angleVariance > 0) {
       const deviationDegrees = (Math.random() - 0.5) * angleVariance;
       const deviationRadians = deviationDegrees * (Math.PI / 180);
 
-      // Rotate the *reflected* direction vector (finalDx, finalDy)
       const cosTheta = Math.cos(deviationRadians);
       const sinTheta = Math.sin(deviationRadians);
       const rotatedDx = finalDx * cosTheta - finalDy * sinTheta;
       const rotatedDy = finalDx * sinTheta + finalDy * cosTheta;
-      finalDx = rotatedDx; // Update final direction with rotation
+      finalDx = rotatedDx;
       finalDy = rotatedDy;
     }
 
-    // Dispatch the final direction if it changed
     if (directionNeedsUpdate) {
       dispatch(setLogoDirection({ dx: finalDx, dy: finalDy }));
     }
 
-    // If a collision occurred, find the player segment hit
-    if (collisionSide && collisionPoint !== null) {
-      // Find the player whose segment was hit
+    if (collisionSide && collisionCoords) {
       const hitPlayerSegment = (
         playerBorderSegments as PlayerBorderSegments[]
       ).find((playerSegment) =>
@@ -278,15 +345,19 @@ const GameArea: React.FC<GameAreaProps> = ({
             return false;
           }
 
-          let pointToCheck = collisionPoint!;
-          // Adjust collision point based on side for comparison with segment startPosition
-          if (collisionSide === "bottom") {
-            pointToCheck = width - collisionPoint!; // Bottom side coordinates run right-to-left
-          } else if (collisionSide === "left") {
-            pointToCheck = height - collisionPoint!; // Left side coordinates run bottom-to-top
+          let pointToCheck: number;
+          if (collisionSide === "top" || collisionSide === "bottom") {
+            pointToCheck = collisionCoords!.x;
+            if (collisionSide === "bottom") {
+              pointToCheck = width - collisionCoords!.x;
+            }
+          } else {
+            pointToCheck = collisionCoords!.y;
+            if (collisionSide === "left") {
+              pointToCheck = height - collisionCoords!.y;
+            }
           }
 
-          // Check if the collision point falls within the segment's range
           return (
             pointToCheck >= segment.startPosition &&
             pointToCheck < segment.startPosition + segment.length
@@ -296,25 +367,44 @@ const GameArea: React.FC<GameAreaProps> = ({
 
       if (hitPlayerSegment) {
         console.log(
-          `Collision detected! Side: ${collisionSide}, Point: ${collisionPoint}, Player Hit: ${hitPlayerSegment.playerName} (ID: ${hitPlayerSegment.playerId})`,
+          `Collision detected! Side: ${collisionSide}, Coords: ${collisionCoords}, Player Hit: ${hitPlayerSegment.playerName} (ID: ${hitPlayerSegment.playerId})`,
         );
         const hitPlayer = activePlayers.find(
           (p) => p.id === hitPlayerSegment.playerId,
         );
         if (hitPlayer && !hitPlayer.isEliminated) {
           dispatch(decrementPlayerHealth(hitPlayerSegment.playerId));
+          dispatch(setLogoColor(hitPlayerSegment.playerColor));
+
+          const particleCount = 50;
+          const particleColors = [hitPlayerSegment.playerColor, logo.color];
+          const newParticles = createParticles(
+            particleCount,
+            collisionCoords.x,
+            collisionCoords.y,
+            particleColors,
+            { lifetime: 800, maxSpeed: 6 },
+          );
+          setParticles((prevParticles) => [...prevParticles, ...newParticles]);
+
+          if (!impactPulse) {
+            setImpactPulse({
+              color: hitPlayerSegment.playerColor,
+              opacity: 0,
+              startTime: now,
+              duration: 400,
+            });
+          }
         }
       } else {
         console.log(
-          `Collision detected! Side: ${collisionSide}, Point: ${collisionPoint}, No player segment found at this point.`,
+          `Collision detected! Side: ${collisionSide}, Coords: ${collisionCoords}, No player segment found at this point.`,
         );
       }
     }
 
-    // Update logo position
     dispatch(setLogoPosition({ x: nextX, y: nextY }));
 
-    // Request next frame ONLY if still running
     if (gameStatus === "running") {
       animationRef.current = requestAnimationFrame(animate);
     }
@@ -332,43 +422,39 @@ const GameArea: React.FC<GameAreaProps> = ({
     gameStatus,
     angleVariance,
     logoSpeed,
+    particles,
+    impactPulse,
+    logo.color,
   ]);
 
-  // Effect to pause the game when only one player remains
   useEffect(() => {
     if (activePlayers.length === 1 && gameStatus === "running") {
       dispatch(pauseGame());
     }
   }, [activePlayers.length, gameStatus, dispatch]);
 
-  // Setup canvas context and manage animation loop based on gameStatus
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // Set canvas dimensions
     canvas.width = width;
     canvas.height = height;
 
-    // Get canvas context
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Initialize logo position to the center of the GameArea
     if (logo.position.x === 0 && logo.position.y === 0) {
       dispatch(initializeLogoPosition({ x: width / 2, y: height / 2 }));
     }
 
-    // Start animation loop if game is running
     if (gameStatus === "running" && animationRef.current === null) {
       animationRef.current = requestAnimationFrame(animate);
     }
 
-    // Cleanup animation loop on unmount or game stop
     return () => {
       if (animationRef.current !== null) {
         cancelAnimationFrame(animationRef.current);
-        animationRef.current = null; // Clear the ref on cleanup
+        animationRef.current = null;
       }
     };
   }, [
@@ -381,7 +467,6 @@ const GameArea: React.FC<GameAreaProps> = ({
     gameStatus,
   ]);
 
-  // Update canvas when player border segments or logo state change
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -389,9 +474,35 @@ const GameArea: React.FC<GameAreaProps> = ({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Draw game elements (borders and logo)
     drawGameElements(ctx);
-  }, [playerBorderSegments, drawGameElements, logo, gameStatus, logoImage]);
+  }, [
+    playerBorderSegments,
+    drawGameElements,
+    logo,
+    gameStatus,
+    logoImage,
+    particles,
+  ]);
+
+  const gameAreaStyle = useMemo(() => {
+    let boxShadow = "none";
+    if (impactPulse) {
+      const alphaHex = Math.round(impactPulse.opacity * 255)
+        .toString(16)
+        .padStart(2, "0");
+      const shadowColor = `${impactPulse.color}${alphaHex}`;
+      const spread = Math.max(0, impactPulse.opacity * 50);
+      const blur = spread * 2;
+      boxShadow = `0 0 ${blur}px ${spread}px ${shadowColor}`;
+    }
+    return {
+      border: "2px solid #1a1a1a",
+      boxSizing: "border-box",
+      backgroundColor: "#f5f5f5",
+      boxShadow: boxShadow,
+      transition: "box-shadow 0.05s linear",
+    };
+  }, [impactPulse]);
 
   return (
     <div
@@ -402,13 +513,8 @@ const GameArea: React.FC<GameAreaProps> = ({
         data-testid="game-area"
         ref={gameAreaRef}
         className="w-full h-full relative overflow-visible"
-        style={{
-          border: "2px solid #1a1a1a",
-          boxSizing: "border-box",
-          backgroundColor: "#f5f5f5",
-        }}
+        style={gameAreaStyle}
       >
-        {/* Canvas for drawing the bouncing logo */}
         <canvas
           data-testid="game-canvas"
           ref={canvasRef}
@@ -417,7 +523,6 @@ const GameArea: React.FC<GameAreaProps> = ({
           height={height}
         />
 
-        {/* Container for player name boxes */}
         <div
           ref={nameBoxContainerRef}
           className="absolute top-0 left-0 w-full h-full overflow-visible"
