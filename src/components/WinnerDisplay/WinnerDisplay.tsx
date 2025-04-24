@@ -60,7 +60,7 @@ const WinnerDisplay: React.FC<WinnerDisplayProps> = () => {
         />
       )}
       <div
-        className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+        className="fixed inset-0  bg-opacity-100 flex items-center justify-center z-50"
         data-testid="winner-display"
       >
         <div
