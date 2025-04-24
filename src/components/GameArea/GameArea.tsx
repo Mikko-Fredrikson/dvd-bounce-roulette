@@ -226,24 +226,21 @@ const GameArea: React.FC<GameAreaProps> = ({
     // --- Particle Update Logic --- END ---
 
     // --- Trail Particle Creation --- START ---
-    const trailParticleCount = 2;
+    const trailParticleCount = 4;
     const trailParticles = createParticles(
       trailParticleCount,
       logo.position.x,
       logo.position.y,
       [logo.color],
       {
-        minSpeed: 0.5,
-        maxSpeed: 1.5,
+        minSpeed: 2,
+        maxSpeed: 4,
         minSize: 1,
         maxSize: 3,
         lifetime: 300,
       },
     );
-    setParticles((prevParticles) => [
-      ...updatedParticles,
-      ...trailParticles,
-    ]);
+    setParticles((prevParticles) => [...updatedParticles, ...trailParticles]);
     // --- Trail Particle Creation --- END ---
 
     let currentPulse = impactPulse;

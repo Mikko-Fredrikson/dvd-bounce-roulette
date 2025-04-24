@@ -105,7 +105,7 @@
   - [x] Add particle effects on collision (Medium)
     - [x] Particles should match the color of the hit player segment (Low) - Updated: Mix player and logo colors
   - [x] Add small impact visual effect at the collision point (Low) - Updated: Implemented as box-shadow pulse
-  - [ ] Add a subtle trail effect to the moving logo (Medium)
+  - [x] Add a subtle trail effect to the moving logo (Medium) # Task completed
   - [ ] Add screen shake on collision (Low)
   - [ ] Add border segment hit/elimination animations (Medium)
     - [ ] Glow/flash effect on hit (Low)

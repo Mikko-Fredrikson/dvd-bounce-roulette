@@ -25,12 +25,19 @@ export const createParticles = (
   },
 ): Particle[] => {
   const particles: Particle[] = [];
-  const { minSpeed = 1, maxSpeed = 5, minSize = 1, maxSize = 3, lifetime = 1000 } =
-    options || {};
+  const {
+    minSpeed = 1,
+    maxSpeed = 5,
+    minSize = 1,
+    maxSize = 3,
+    lifetime = 1000,
+  } = options || {};
 
   // Ensure colors array is not empty
   if (!colors || colors.length === 0) {
-    console.warn("createParticles called with empty colors array. Using default white.");
+    console.warn(
+      "createParticles called with empty colors array. Using default white.",
+    );
     colors = ["#FFFFFF"];
   }
 
