@@ -12,6 +12,9 @@ function App() {
         <div className="game-container flex flex-col md:flex-row gap-6 relative">
           {/* Game Area (2/3 of screen on larger devices) */}
           <div className="w-full md:w-2/3 flex items-center justify-center">
+            {/* Winner Display Popup */}
+            <WinnerDisplay />
+            {/* Game Area */}
             <GameArea />
           </div>
 
@@ -19,9 +22,6 @@ function App() {
           <div className="w-full md:w-1/3 h-[60vh] md:h-[80vh]">
             <ControlPanel />
           </div>
-
-          {/* Winner Display Popup */}
-          <WinnerDisplay />
         </div>
       </div>
     </div>

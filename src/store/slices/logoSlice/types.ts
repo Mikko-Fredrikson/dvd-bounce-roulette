@@ -13,6 +13,7 @@ export interface LogoState {
   initialPosition: Vector2D; // Add initial position
   velocity: Vector2D;
   size: Size;
+  color: string; // Current color of the logo
   imageUrl: string | null; // To store the uploaded logo URL
   angle: number; // Current angle of movement in degrees
   speed: number; // Magnitude of velocity

@@ -60,12 +60,11 @@ const WinnerDisplay: React.FC<WinnerDisplayProps> = () => {
         />
       )}
       <div
-        className="fixed inset-0  bg-opacity-100 flex items-center justify-center z-50"
+        className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none"
         data-testid="winner-display"
       >
         <div
-          // Removed animate-pulse, confetti is enough celebration for now
-          className="bg-white p-8 rounded-lg shadow-xl text-center"
+          className="bg-white p-8 rounded-lg shadow-xl text-center pointer-events-auto"
           style={{ borderColor: winner.color, borderWidth: "4px" }}
         >
           <h2 className="text-4xl font-bold mb-4">Congratulations!</h2>
