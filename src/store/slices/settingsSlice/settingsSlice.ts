@@ -8,10 +8,10 @@ export interface SettingsState {
 }
 
 const initialState: SettingsState = {
-  angleVariance: 10, // Default 10%
+  angleVariance: 20, // Default 10%
   playerHealth: 3, // Default 3 hits
   customLogo: null,
-  logoSpeed: 5, // Default speed
+  logoSpeed: 3, // Default speed
 };
 
 const settingsSlice = createSlice({

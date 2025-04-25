@@ -230,7 +230,7 @@ const GameArea: React.FC<GameAreaProps> = ({
     // --- Particle Update Logic --- END ---
 
     // --- Trail Particle Creation --- START ---
-    const trailParticleCount = 4;
+    const trailParticleCount = 0;
     const trailParticles = createParticles(
       trailParticleCount,
       logo.position.x,
