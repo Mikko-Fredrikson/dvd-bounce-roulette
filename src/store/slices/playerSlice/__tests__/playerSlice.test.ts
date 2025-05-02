@@ -9,6 +9,7 @@ import playerReducer, {
   initialState,
 } from "../playerSlice";
 import { PlayerState, Player } from "../types";
+import { RedistributionMode } from "../../settingsSlice/settingsSlice"; // Import type
 
 // Mock the color utility to get consistent test results
 vi.mock("../../../../utils/colorUtils", () => ({
@@ -216,7 +217,11 @@ describe("player reducer", () => {
     };
 
     // Decrement player 1's health
-    let nextState = playerReducer(previousState, decrementPlayerHealth("1"));
+    // Update action call to use payload object
+    let nextState = playerReducer(
+      previousState,
+      decrementPlayerHealth({ playerId: "1" }),
+    );
     expect(nextState.players.find((p) => p.id === "1")?.health).toBe(2);
     expect(nextState.players.find((p) => p.id === "1")?.isEliminated).toBe(
       false,
@@ -227,7 +232,11 @@ describe("player reducer", () => {
     );
 
     // Decrement player 2's health
-    nextState = playerReducer(nextState, decrementPlayerHealth("2"));
+    // Update action call to use payload object
+    nextState = playerReducer(
+      nextState,
+      decrementPlayerHealth({ playerId: "2" }),
+    );
     expect(nextState.players.find((p) => p.id === "1")?.health).toBe(2); // Player 1 unchanged
     expect(nextState.players.find((p) => p.id === "2")?.health).toBe(0);
     expect(nextState.players.find((p) => p.id === "2")?.isEliminated).toBe(
@@ -235,7 +244,11 @@ describe("player reducer", () => {
     );
 
     // Try decrementing player 2's health below 0
-    nextState = playerReducer(nextState, decrementPlayerHealth("2"));
+    // Update action call to use payload object
+    nextState = playerReducer(
+      nextState,
+      decrementPlayerHealth({ playerId: "2" }),
+    );
     expect(nextState.players.find((p) => p.id === "2")?.health).toBe(0); // Health should not go below 0
     expect(nextState.players.find((p) => p.id === "2")?.isEliminated).toBe(
       true,
@@ -273,7 +286,11 @@ describe("player reducer", () => {
     };
     const previousState: PlayerState = { players: [p1, p2, p3] };
 
-    const nextState = playerReducer(previousState, decrementPlayerHealth("2"));
+    // Update action call to use payload object (defaulting to adjacent)
+    const nextState = playerReducer(
+      previousState,
+      decrementPlayerHealth({ playerId: "2" }),
+    );
 
     const eliminatedPlayer = nextState.players.find((p) => p.id === "2");
     const neighbor1 = nextState.players.find((p) => p.id === "1");
@@ -329,7 +346,11 @@ describe("player reducer", () => {
     };
     const previousState: PlayerState = { players: [p1, p2, p3] };
 
-    const nextState = playerReducer(previousState, decrementPlayerHealth("1"));
+    // Update action call to use payload object (defaulting to adjacent)
+    const nextState = playerReducer(
+      previousState,
+      decrementPlayerHealth({ playerId: "1" }),
+    );
 
     const eliminatedPlayer = nextState.players.find((p) => p.id === "1");
     const neighbor2 = nextState.players.find((p) => p.id === "2");
@@ -384,7 +405,11 @@ describe("player reducer", () => {
     };
     const previousState: PlayerState = { players: [p1, p2, p3] };
 
-    const nextState = playerReducer(previousState, decrementPlayerHealth("3"));
+    // Update action call to use payload object (defaulting to adjacent)
+    const nextState = playerReducer(
+      previousState,
+      decrementPlayerHealth({ playerId: "3" }),
+    );
 
     const eliminatedPlayer = nextState.players.find((p) => p.id === "3");
     const neighbor1 = nextState.players.find((p) => p.id === "1"); // Wraps around
@@ -425,7 +450,11 @@ describe("player reducer", () => {
     };
     const previousState: PlayerState = { players: [p1, p2] };
 
-    const nextState = playerReducer(previousState, decrementPlayerHealth("2"));
+    // Update action call to use payload object (defaulting to adjacent)
+    const nextState = playerReducer(
+      previousState,
+      decrementPlayerHealth({ playerId: "2" }),
+    );
 
     const eliminatedPlayer = nextState.players.find((p) => p.id === "2");
     const neighbor1 = nextState.players.find((p) => p.id === "1");
@@ -460,7 +489,11 @@ describe("player reducer", () => {
     }; // P2 has full length
     const previousState: PlayerState = { players: [p1, p2] };
 
-    const nextState = playerReducer(previousState, decrementPlayerHealth("1"));
+    // Update action call to use payload object (defaulting to adjacent)
+    const nextState = playerReducer(
+      previousState,
+      decrementPlayerHealth({ playerId: "1" }),
+    );
 
     // P1 state should remain unchanged
     expect(nextState.players.find((p) => p.id === "1")?.health).toBe(0);
@@ -605,7 +638,11 @@ describe("player reducer", () => {
     };
     const previousState: PlayerState = { players: [p1, p2, p3, p4] };
 
-    const nextState = playerReducer(previousState, decrementPlayerHealth("2"));
+    // Update action call to use payload object (defaulting to adjacent)
+    const nextState = playerReducer(
+      previousState,
+      decrementPlayerHealth({ playerId: "2" }),
+    );
 
     const eliminatedPlayer = nextState.players.find((p) => p.id === "2");
     const neighbor1 = nextState.players.find((p) => p.id === "1");
@@ -634,5 +671,244 @@ describe("player reducer", () => {
     expect(nonNeighbor4?.sectionStart).toBeCloseTo(
       neighbor1!.sectionLength + neighbor3!.sectionLength,
     ); // P4 starts after P3
+  });
+
+  // --- New Tests for Equal Redistribution ---
+
+  it("should handle decrementPlayerHealth causing elimination and redistribute length EQUALLY (4 players, middle player)", () => {
+    // P1 --- P2 --- P3 --- P4 (P2 eliminated)
+    const initialLength = 1 / 4;
+    const p1: Player = {
+      id: "1",
+      name: "P1",
+      health: 3,
+      color: "#c0",
+      sectionStart: 0 * initialLength,
+      sectionLength: initialLength,
+      isEliminated: false,
+    };
+    const p2: Player = {
+      id: "2",
+      name: "P2",
+      health: 1,
+      color: "#c1",
+      sectionStart: 1 * initialLength,
+      sectionLength: initialLength,
+      isEliminated: false,
+    };
+    const p3: Player = {
+      id: "3",
+      name: "P3",
+      health: 3,
+      color: "#c2",
+      sectionStart: 2 * initialLength,
+      sectionLength: initialLength,
+      isEliminated: false,
+    };
+    const p4: Player = {
+      id: "4",
+      name: "P4",
+      health: 3,
+      color: "#c3",
+      sectionStart: 3 * initialLength,
+      sectionLength: initialLength,
+      isEliminated: false,
+    };
+    const previousState: PlayerState = { players: [p1, p2, p3, p4] };
+    const mode: RedistributionMode = "equal";
+
+    // Simulate calling the reducer with the mode (actual implementation might differ)
+    // We'll assume the reducer logic accesses this mode internally for the test
+    const nextState = playerReducer(
+      previousState,
+      decrementPlayerHealth({ playerId: "2", mode }),
+    );
+
+    const eliminatedPlayer = nextState.players.find((p) => p.id === "2");
+    const activePlayers = nextState.players.filter((p) => !p.isEliminated);
+    const p1After = activePlayers.find((p) => p.id === "1");
+    const p3After = activePlayers.find((p) => p.id === "3");
+    const p4After = activePlayers.find((p) => p.id === "4");
+
+    expect(eliminatedPlayer?.health).toBe(0);
+    expect(eliminatedPlayer?.isEliminated).toBe(true);
+    expect(eliminatedPlayer?.sectionLength).toBe(0);
+    expect(activePlayers.length).toBe(3);
+
+    // Check length redistribution (P1, P3, P4 each get 1/3 of P2's length)
+    const lengthToAdd = initialLength / 3;
+    const expectedLength = initialLength + lengthToAdd; // 0.25 + (0.25 / 3) = 1/3
+    expect(p1After?.sectionLength).toBeCloseTo(expectedLength);
+    expect(p3After?.sectionLength).toBeCloseTo(expectedLength);
+    expect(p4After?.sectionLength).toBeCloseTo(expectedLength);
+
+    // Check start positions (Order P1, P3, P4 based on original start)
+    expect(p1After?.sectionStart).toBeCloseTo(0); // P1 still starts at 0
+    expect(p3After?.sectionStart).toBeCloseTo(p1After!.sectionLength); // P3 starts after P1
+    expect(p4After?.sectionStart).toBeCloseTo(
+      p1After!.sectionLength + p3After!.sectionLength,
+    ); // P4 starts after P3
+  });
+
+  it("should handle decrementPlayerHealth causing elimination and redistribute length EQUALLY (3 players, first player)", () => {
+    // P1 --- P2 --- P3 (P1 eliminated)
+    const initialLength = 1 / 3;
+    const p1: Player = {
+      id: "1",
+      name: "P1",
+      health: 1,
+      color: "#c0",
+      sectionStart: 0 * initialLength,
+      sectionLength: initialLength,
+      isEliminated: false,
+    };
+    const p2: Player = {
+      id: "2",
+      name: "P2",
+      health: 3,
+      color: "#c1",
+      sectionStart: 1 * initialLength,
+      sectionLength: initialLength,
+      isEliminated: false,
+    };
+    const p3: Player = {
+      id: "3",
+      name: "P3",
+      health: 3,
+      color: "#c2",
+      sectionStart: 2 * initialLength,
+      sectionLength: initialLength,
+      isEliminated: false,
+    };
+    const previousState: PlayerState = { players: [p1, p2, p3] };
+    const mode: RedistributionMode = "equal";
+
+    const nextState = playerReducer(
+      previousState,
+      decrementPlayerHealth({ playerId: "1", mode }),
+    );
+
+    const eliminatedPlayer = nextState.players.find((p) => p.id === "1");
+    const activePlayers = nextState.players.filter((p) => !p.isEliminated);
+    const p2After = activePlayers.find((p) => p.id === "2");
+    const p3After = activePlayers.find((p) => p.id === "3");
+
+    expect(eliminatedPlayer?.health).toBe(0);
+    expect(eliminatedPlayer?.isEliminated).toBe(true);
+    expect(eliminatedPlayer?.sectionLength).toBe(0);
+    expect(activePlayers.length).toBe(2);
+
+    // Check length redistribution (P2, P3 each get 1/2 of P1's length)
+    const lengthToAdd = initialLength / 2;
+    const expectedLength = initialLength + lengthToAdd; // 1/3 + (1/3 / 2) = 0.5
+    expect(p2After?.sectionLength).toBeCloseTo(expectedLength);
+    expect(p3After?.sectionLength).toBeCloseTo(expectedLength);
+
+    // Check start positions (Order P2, P3 based on original start)
+    expect(p2After?.sectionStart).toBeCloseTo(initialLength); // P2 keeps original start
+    expect(p3After?.sectionStart).toBeCloseTo(
+      initialLength + p2After!.sectionLength,
+    ); // P3 starts after P2
+  });
+
+  it("should handle decrementPlayerHealth causing elimination and redistribute length EQUALLY (3 players, last player)", () => {
+    // P1 --- P2 --- P3 (P3 eliminated)
+    const initialLength = 1 / 3;
+    const p1: Player = {
+      id: "1",
+      name: "P1",
+      health: 3,
+      color: "#c0",
+      sectionStart: 0 * initialLength,
+      sectionLength: initialLength,
+      isEliminated: false,
+    };
+    const p2: Player = {
+      id: "2",
+      name: "P2",
+      health: 3,
+      color: "#c1",
+      sectionStart: 1 * initialLength,
+      sectionLength: initialLength,
+      isEliminated: false,
+    };
+    const p3: Player = {
+      id: "3",
+      name: "P3",
+      health: 1,
+      color: "#c2",
+      sectionStart: 2 * initialLength,
+      sectionLength: initialLength,
+      isEliminated: false,
+    };
+    const previousState: PlayerState = { players: [p1, p2, p3] };
+    const mode: RedistributionMode = "equal";
+
+    const nextState = playerReducer(
+      previousState,
+      decrementPlayerHealth({ playerId: "3", mode }),
+    );
+
+    const eliminatedPlayer = nextState.players.find((p) => p.id === "3");
+    const activePlayers = nextState.players.filter((p) => !p.isEliminated);
+    const p1After = activePlayers.find((p) => p.id === "1");
+    const p2After = activePlayers.find((p) => p.id === "2");
+
+    expect(eliminatedPlayer?.health).toBe(0);
+    expect(eliminatedPlayer?.isEliminated).toBe(true);
+    expect(eliminatedPlayer?.sectionLength).toBe(0);
+    expect(activePlayers.length).toBe(2);
+
+    // Check length redistribution (P1, P2 each get 1/2 of P3's length)
+    const lengthToAdd = initialLength / 2;
+    const expectedLength = initialLength + lengthToAdd; // 1/3 + (1/3 / 2) = 0.5
+    expect(p1After?.sectionLength).toBeCloseTo(expectedLength);
+    expect(p2After?.sectionLength).toBeCloseTo(expectedLength);
+
+    // Check start positions (Order P1, P2 based on original start)
+    expect(p1After?.sectionStart).toBeCloseTo(0); // P1 keeps original start
+    expect(p2After?.sectionStart).toBeCloseTo(p1After!.sectionLength); // P2 starts after P1
+  });
+
+  it("should handle decrementPlayerHealth causing elimination with only one neighbor left (EQUAL mode - same as adjacent)", () => {
+    // P1 --- P2 (P2 eliminated)
+    const p1: Player = {
+      id: "1",
+      name: "P1",
+      health: 3,
+      color: "#c0",
+      sectionStart: 0,
+      sectionLength: 0.5,
+      isEliminated: false,
+    };
+    const p2: Player = {
+      id: "2",
+      name: "P2",
+      health: 1,
+      color: "#c1",
+      sectionStart: 0.5,
+      sectionLength: 0.5,
+      isEliminated: false,
+    };
+    const previousState: PlayerState = { players: [p1, p2] };
+    const mode: RedistributionMode = "equal";
+
+    const nextState = playerReducer(
+      previousState,
+      decrementPlayerHealth({ playerId: "2", mode }),
+    );
+
+    const eliminatedPlayer = nextState.players.find((p) => p.id === "2");
+    const neighbor1 = nextState.players.find(
+      (p) => p.id === "1" && !p.isEliminated,
+    );
+
+    expect(eliminatedPlayer?.health).toBe(0);
+    expect(eliminatedPlayer?.isEliminated).toBe(true);
+    expect(eliminatedPlayer?.sectionLength).toBe(0);
+
+    // P1 gets all the length
+    expect(neighbor1?.sectionLength).toBeCloseTo(1.0);
+    expect(neighbor1?.sectionStart).toBeCloseTo(0); // Start remains 0
   });
 });

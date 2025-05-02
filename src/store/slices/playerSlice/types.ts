@@ -21,3 +21,16 @@ export interface UpdatePlayerNamePayload {
   id: string;
   name: string;
 }
+
+export interface DecrementPlayerHealthPayload {
+  playerId: string;
+  mode?: RedistributionMode; // Optional mode, defaults to 'adjacent' if not provided
+}
+
+export interface SetPlayerBorderSegmentsPayload {
+  id: string;
+  sectionStart: number;
+  sectionLength: number;
+}
+
+import { RedistributionMode } from "../../settingsSlice/settingsSlice"; // Import type

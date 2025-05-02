@@ -5,8 +5,11 @@ import {
   Player,
   AddPlayerPayload,
   UpdatePlayerNamePayload,
+  DecrementPlayerHealthPayload, // Import new payload type
+  SetPlayerBorderSegmentsPayload, // Import explicit type
 } from "./types";
 import { generateUniqueColors } from "../../../utils/colorUtils";
+import { RedistributionMode } from "../../settingsSlice/settingsSlice"; // Import type
 
 // For color generation with generateUniqueColors
 let usedColors: { [key: string]: string } = {};
@@ -114,10 +117,12 @@ export const playerSlice = createSlice({
       }
     },
 
-    decrementPlayerHealth: (state, action: PayloadAction<string>) => {
-      const playerIndex = state.players.findIndex(
-        (p) => p.id === action.payload,
-      );
+    decrementPlayerHealth: (
+      state,
+      action: PayloadAction<DecrementPlayerHealthPayload>, // Use the new payload type
+    ) => {
+      const { playerId, mode = "adjacent" } = action.payload; // Destructure payload, default mode to adjacent
+      const playerIndex = state.players.findIndex((p) => p.id === playerId);
       if (playerIndex === -1) return;
 
       const player = state.players[playerIndex];
@@ -127,7 +132,6 @@ export const playerSlice = createSlice({
 
         if (player.health === 0) {
           player.isEliminated = true;
-          // Assign the next elimination order number
           player.eliminationOrder = getNextEliminationOrder(state.players);
           const eliminatedPlayer = player;
           const eliminatedLength = eliminatedPlayer.sectionLength;
@@ -137,61 +141,68 @@ export const playerSlice = createSlice({
           const numActivePlayers = activePlayers.length;
 
           if (numActivePlayers > 0) {
-            // --- Find Neighbors --- (using original full list)
-            const eliminatedOriginalIndex = state.players.findIndex(
-              (p) => p.id === eliminatedPlayer.id,
-            );
-            let prevNeighborOriginalIndex = -1;
-            let nextNeighborOriginalIndex = -1;
+            // --- Distribute Length based on mode ---
+            if (mode === "equal") {
+              // EQUAL DISTRIBUTION
+              const lengthToAdd = eliminatedLength / numActivePlayers;
+              activePlayers.forEach((activePlayer) => {
+                activePlayer.sectionLength += lengthToAdd;
+              });
+            } else {
+              // ADJACENT DISTRIBUTION (Existing Logic)
+              const eliminatedOriginalIndex = state.players.findIndex(
+                (p) => p.id === eliminatedPlayer.id,
+              );
+              let prevNeighborOriginalIndex = -1;
+              let nextNeighborOriginalIndex = -1;
 
-            // Find previous active neighbor index
-            for (let i = 1; i < state.players.length; i++) {
-              const checkIndex =
-                (eliminatedOriginalIndex - i + state.players.length) %
-                state.players.length;
-              if (!state.players[checkIndex].isEliminated) {
-                prevNeighborOriginalIndex = checkIndex;
-                break;
+              // Find previous active neighbor index
+              for (let i = 1; i < state.players.length; i++) {
+                const checkIndex =
+                  (eliminatedOriginalIndex - i + state.players.length) %
+                  state.players.length;
+                if (!state.players[checkIndex].isEliminated) {
+                  prevNeighborOriginalIndex = checkIndex;
+                  break;
+                }
               }
-            }
 
-            // Find next active neighbor index
-            for (let i = 1; i < state.players.length; i++) {
-              const checkIndex =
-                (eliminatedOriginalIndex + i) % state.players.length;
-              if (!state.players[checkIndex].isEliminated) {
-                nextNeighborOriginalIndex = checkIndex;
-                break;
+              // Find next active neighbor index
+              for (let i = 1; i < state.players.length; i++) {
+                const checkIndex =
+                  (eliminatedOriginalIndex + i) % state.players.length;
+                if (!state.players[checkIndex].isEliminated) {
+                  nextNeighborOriginalIndex = checkIndex;
+                  break;
+                }
               }
-            }
-            // --- End Find Neighbors ---
 
-            // --- Distribute Length ---
-            if (
-              prevNeighborOriginalIndex !== -1 &&
-              nextNeighborOriginalIndex !== -1 &&
-              prevNeighborOriginalIndex !== nextNeighborOriginalIndex
-            ) {
-              // Two distinct neighbors: Split the length
-              const lengthToAdd = eliminatedLength / 2;
-              state.players[prevNeighborOriginalIndex].sectionLength +=
-                lengthToAdd;
-              state.players[nextNeighborOriginalIndex].sectionLength +=
-                lengthToAdd;
-            } else if (prevNeighborOriginalIndex !== -1) {
-              // Only one neighbor left (prev and next are the same index)
-              state.players[prevNeighborOriginalIndex].sectionLength +=
-                eliminatedLength;
+              if (
+                prevNeighborOriginalIndex !== -1 &&
+                nextNeighborOriginalIndex !== -1 &&
+                prevNeighborOriginalIndex !== nextNeighborOriginalIndex
+              ) {
+                // Two distinct neighbors: Split the length
+                const lengthToAdd = eliminatedLength / 2;
+                state.players[prevNeighborOriginalIndex].sectionLength +=
+                  lengthToAdd;
+                state.players[nextNeighborOriginalIndex].sectionLength +=
+                  lengthToAdd;
+              } else if (prevNeighborOriginalIndex !== -1) {
+                // Only one neighbor left (prev and next are the same index)
+                state.players[prevNeighborOriginalIndex].sectionLength +=
+                  eliminatedLength;
+              }
+              // If no neighbors, length is just lost (last player standing)
             }
-            // If no neighbors, length is just lost (last player standing)
             // --- End Distribute Length ---
 
-            // --- Recalculate Start Positions Sequentially --- START ---
-            // Sort active players by their original start positions to maintain order
+            // --- Recalculate Start Positions Sequentially (Works for both modes) --- START ---
+            // Sort active players by their original start positions to maintain visual order
             activePlayers.sort((a, b) => a.sectionStart - b.sectionStart);
 
             // Find the active player who should be visually first
-            // This is usually the one with the lowest original sectionStart
+            // This is usually the one with the lowest original sectionStart among active players
             const firstVisualPlayer = activePlayers[0];
             let currentStart = firstVisualPlayer.sectionStart; // Start recalculation from their current start
 
@@ -225,7 +236,7 @@ export const playerSlice = createSlice({
 
     setPlayerBorderSegments: (
       state,
-      action: PayloadAction<SetPlayerBorderSegmentsPayload[]>,
+      action: PayloadAction<SetPlayerBorderSegmentsPayload[]>, // Use explicit type
     ) => {
       action.payload.forEach((segmentInfo) => {
         const player = state.players.find((p) => p.id === segmentInfo.id);

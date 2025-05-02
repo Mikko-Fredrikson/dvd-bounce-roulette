@@ -6,6 +6,8 @@ import {
   setAngleVariance,
   setLogoSpeed, // Import setLogoSpeed action
   setCustomLogo, // Import setCustomLogo action
+  setRedistributionMode, // Import the new action
+  RedistributionMode, // Import the type
 } from "../../store/slices/settingsSlice/settingsSlice"; // Import action
 
 /**
@@ -19,6 +21,9 @@ const ControlPanel = () => {
   const angleVariance = useAppSelector((state) => state.settings.angleVariance);
   const logoSpeed = useAppSelector((state) => state.settings.logoSpeed); // Get logoSpeed from state
   const customLogo = useAppSelector((state) => state.settings.customLogo); // Get customLogo from state
+  const redistributionMode = useAppSelector(
+    (state) => state.settings.redistributionMode,
+  ); // Get redistributionMode from state
   const [logoPreview, setLogoPreview] = useState<string | null>(customLogo);
 
   const handleAngleVarianceChange = (
@@ -63,6 +68,13 @@ const ControlPanel = () => {
     if (fileInput) {
       fileInput.value = "";
     }
+  };
+
+  const handleRedistributionModeChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const value = event.target.value as RedistributionMode;
+    dispatch(setRedistributionMode(value));
   };
 
   return (
@@ -234,6 +246,41 @@ const ControlPanel = () => {
                 defaultValue="3"
                 className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
               />
+            </div>
+
+            {/* Border Redistribution Mode */}
+            <div className="space-y-3 bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Border Redistribution on Elimination
+              </label>
+              <div className="flex items-center space-x-4">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="redistributionMode"
+                    value="adjacent"
+                    checked={redistributionMode === "adjacent"}
+                    onChange={handleRedistributionModeChange}
+                    className="form-radio h-4 w-4 text-indigo-600 transition duration-150 ease-in-out"
+                  />
+                  <span className="text-sm text-slate-600">Adjacent</span>
+                </label>
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="redistributionMode"
+                    value="equal"
+                    checked={redistributionMode === "equal"}
+                    onChange={handleRedistributionModeChange}
+                    className="form-radio h-4 w-4 text-indigo-600 transition duration-150 ease-in-out"
+                  />
+                  <span className="text-sm text-slate-600">Equal</span>
+                </label>
+              </div>
+              <p className="text-xs text-slate-500">
+                Choose how border space is redistributed when a player is
+                eliminated.
+              </p>
             </div>
           </div>
         )}

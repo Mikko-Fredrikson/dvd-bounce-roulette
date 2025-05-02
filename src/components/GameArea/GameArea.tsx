@@ -26,6 +26,7 @@ import {
 } from "../../store/slices/gameStateSlice/gameStateSlice"; // Import finishGame
 import { createParticles } from "../../utils/particleUtils/particleManager";
 import type { Particle } from "../../utils/particleUtils/types";
+import { RedistributionMode } from "../../store/slices/settingsSlice/settingsSlice"; // Import RedistributionMode type
 
 // Define type for the impact pulse effect state
 interface ImpactPulse {
@@ -58,9 +59,8 @@ const GameArea: React.FC<GameAreaProps> = ({
   const allPlayers = useSelector((state: RootState) => state.players.players);
   const logo = useSelector((state: RootState) => state.logo);
   const gameStatus = useSelector((state: RootState) => state.gameState.status);
-  const { angleVariance, logoSpeed, customLogo } = useSelector(
-    (state: RootState) => state.settings,
-  );
+  const { angleVariance, logoSpeed, customLogo, redistributionMode } =
+    useSelector((state: RootState) => state.settings); // Add redistributionMode
 
   // Filter out eliminated players
   const activePlayers = allPlayers.filter((player) => !player.isEliminated);
@@ -396,7 +396,13 @@ const GameArea: React.FC<GameAreaProps> = ({
           (p) => p.id === hitPlayerSegment.playerId,
         );
         if (hitPlayer && !hitPlayer.isEliminated) {
-          dispatch(decrementPlayerHealth(hitPlayerSegment.playerId));
+          // Pass payload object with playerId and mode
+          dispatch(
+            decrementPlayerHealth({
+              playerId: hitPlayerSegment.playerId,
+              mode: redistributionMode, // Include the mode from settings
+            }),
+          );
           dispatch(setLogoColor(hitPlayerSegment.playerColor));
 
           const particleCount = 50;
@@ -448,6 +454,7 @@ const GameArea: React.FC<GameAreaProps> = ({
     particles,
     impactPulse,
     logo.color,
+    redistributionMode, // Add redistributionMode to dependencies
   ]);
 
   useEffect(() => {

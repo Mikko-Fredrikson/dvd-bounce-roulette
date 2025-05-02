@@ -4,16 +4,18 @@ import settingsReducer, {
   setPlayerHealth,
   setCustomLogo,
   resetSettings,
-  setLogoSpeed, // Import the new action
+  setLogoSpeed,
+  setRedistributionMode, // Import the new action
   SettingsState,
 } from "../settingsSlice";
 
 describe("settings slice", () => {
   const initialState: SettingsState = {
-    angleVariance: 10,
+    angleVariance: 20, // Was 10
     playerHealth: 3,
     customLogo: null,
-    logoSpeed: 5, // Add initial logo speed
+    logoSpeed: 3, // Was 5
+    redistributionMode: "adjacent", // Add initial redistribution mode
   };
 
   it("should handle initial state", () => {
@@ -52,12 +54,21 @@ describe("settings slice", () => {
     expect(actual.logoSpeed).toEqual(8);
   });
 
+  it("should handle setRedistributionMode", () => {
+    let actual = settingsReducer(initialState, setRedistributionMode("equal"));
+    expect(actual.redistributionMode).toEqual("equal");
+
+    actual = settingsReducer(actual, setRedistributionMode("adjacent"));
+    expect(actual.redistributionMode).toEqual("adjacent");
+  });
+
   it("should handle resetSettings", () => {
     const modifiedState: SettingsState = {
-      angleVariance: 20,
+      angleVariance: 30, // Changed from 20 to ensure it's different
       playerHealth: 5,
       customLogo: "test.png",
-      logoSpeed: 10, // Include logoSpeed in modified state
+      logoSpeed: 10,
+      redistributionMode: "equal", // Include redistributionMode in modified state
     };
     const actual = settingsReducer(modifiedState, resetSettings());
     expect(actual).toEqual(initialState);

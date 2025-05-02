@@ -98,6 +98,11 @@
     - [x] If health is zero, trigger player elimination logic.
       - [x] Remove the player's border segment(s).
       - [x] Recalculate and redistribute the freed border space to adjacent players (refer to game rules in `game-document.md`).
+      - [x] Add option to redistribute border space equally among remaining players (Medium) # New Task
+        - [x] Add setting to `settingsSlice` for redistribution mode (Low) # New Task
+        - [x] Add UI control in `ControlPanel` to select redistribution mode (Low) # New Task
+        - [x] Modify elimination logic in `playerSlice` to handle equal redistribution (Medium) # New Task
+        - [x] Update relevant tests for redistribution logic (Medium) # New Task
       - [x] Update the player list/state.
     - [x] Check for win conditions (e.g., only one player remaining). # Task completed
       - [x] Dispatch `finishGame` action when only one player remains. # Task completed
