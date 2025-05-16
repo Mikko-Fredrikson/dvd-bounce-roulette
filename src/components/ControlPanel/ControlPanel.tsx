@@ -6,9 +6,11 @@ import {
   setAngleVariance,
   setLogoSpeed, // Import setLogoSpeed action
   setCustomLogo, // Import setCustomLogo action
+  setPlayerHealth, // Import setPlayerHealth action
   setRedistributionMode, // Import the new action
   RedistributionMode, // Import the type
 } from "../../store/slices/settingsSlice/settingsSlice"; // Import action
+import { setAllPlayersHealth } from "../../store/slices/playerSlice/playerSlice"; // Import the new action
 
 /**
  * ControlPanel component displays the side panel with tabs for:
@@ -20,6 +22,7 @@ const ControlPanel = () => {
   const dispatch = useAppDispatch();
   const angleVariance = useAppSelector((state) => state.settings.angleVariance);
   const logoSpeed = useAppSelector((state) => state.settings.logoSpeed); // Get logoSpeed from state
+  const playerHealth = useAppSelector((state) => state.settings.playerHealth); // Get playerHealth from state
   const customLogo = useAppSelector((state) => state.settings.customLogo); // Get customLogo from state
   const redistributionMode = useAppSelector(
     (state) => state.settings.redistributionMode,
@@ -38,6 +41,14 @@ const ControlPanel = () => {
   ) => {
     const value = parseInt(event.target.value, 10);
     dispatch(setLogoSpeed(value)); // Dispatch setLogoSpeed action
+  };
+
+  const handlePlayerHealthChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const value = parseInt(event.target.value, 10);
+    dispatch(setPlayerHealth(value));
+    dispatch(setAllPlayersHealth(value)); // Dispatch action to update all players' health
   };
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -232,20 +243,28 @@ const ControlPanel = () => {
             {/* Player health */}
             <div className="space-y-3 bg-white p-4 rounded-lg shadow-sm border border-slate-200">
               <div className="flex justify-between items-center">
-                <label className="block text-sm font-medium text-slate-700">
+                <label
+                  htmlFor="player-health-slider"
+                  className="block text-sm font-medium text-slate-700"
+                >
                   Player Health
                 </label>
                 <span className="text-sm bg-slate-100 px-2 py-1 rounded-md font-mono">
-                  3
+                  {playerHealth} {/* Display current player health */}
                 </span>
               </div>
               <input
+                id="player-health-slider"
                 type="range"
                 min="1"
                 max="10"
-                defaultValue="3"
+                value={playerHealth} // Use value from state
+                onChange={handlePlayerHealthChange} // Handle change
                 className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
               />
+              <p className="text-xs text-slate-500">
+                Set the starting health for each player.
+              </p>
             </div>
 
             {/* Border Redistribution Mode */}

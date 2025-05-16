@@ -13,6 +13,9 @@ const WinnerDisplay: React.FC<WinnerDisplayProps> = () => {
   const dispatch = useDispatch(); // Get dispatch function
   const allPlayers = useSelector((state: RootState) => state.players.players);
   const gameStatus = useSelector((state: RootState) => state.gameState.status);
+  const playerHealth = useSelector(
+    (state: RootState) => state.settings.playerHealth,
+  );
   const { width, height } = useWindowSize(); // Get window dimensions for confetti
   const [showConfetti, setShowConfetti] = useState(false);
 
@@ -38,7 +41,7 @@ const WinnerDisplay: React.FC<WinnerDisplayProps> = () => {
   // Handler for the reset button
   const handleReset = () => {
     dispatch(resetGame());
-    dispatch(resetPlayersHealth());
+    dispatch(resetPlayersHealth(playerHealth));
     dispatch(resetLogo());
   };
 

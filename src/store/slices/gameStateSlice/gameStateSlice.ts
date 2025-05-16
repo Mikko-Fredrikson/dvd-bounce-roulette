@@ -31,6 +31,13 @@ const gameStateSlice = createSlice({
       state.status = "finished";
     },
   },
+  extraReducers: (builder) => {
+    builder.addCase("settings/setPlayerHealth", (_state, _action) => {
+      // This is an example if you wanted to react to another slice's action
+      // For this task, direct dispatch from ControlPanel is more straightforward
+      // Prefixing with _ to denote unused variables
+    });
+  },
 });
 
 export const { startGame, pauseGame, resumeGame, resetGame, finishGame } =

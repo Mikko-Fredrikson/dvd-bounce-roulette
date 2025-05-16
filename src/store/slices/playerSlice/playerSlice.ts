@@ -9,7 +9,6 @@ import {
   SetPlayerBorderSegmentsPayload, // Import explicit type
 } from "./types";
 import { generateUniqueColors } from "../../../utils/colorUtils";
-import { RedistributionMode } from "../../settingsSlice/settingsSlice"; // Import type
 
 // For color generation with generateUniqueColors
 let usedColors: { [key: string]: string } = {};
@@ -37,7 +36,7 @@ export const playerSlice = createSlice({
       const newPlayer: Player = {
         id: uuidv4(),
         name: action.payload.name,
-        health: 3,
+        health: action.payload.initialHealth, // Use initialHealth from payload
         color: usedColors[action.payload.name],
         sectionStart: 0,
         sectionLength: 0,
@@ -103,7 +102,6 @@ export const playerSlice = createSlice({
     ) => {
       const player = state.players.find((p) => p.id === action.payload.id);
       if (player) {
-        const oldName = player.name;
         player.name = action.payload.name;
 
         // Update colors with the new name
@@ -217,9 +215,9 @@ export const playerSlice = createSlice({
       }
     },
 
-    resetPlayersHealth: (state) => {
+    resetPlayersHealth: (state, action: PayloadAction<number>) => {
       state.players.forEach((player) => {
-        player.health = 3;
+        player.health = action.payload; // Set to the new health value
         player.isEliminated = false;
         player.eliminationOrder = null; // Reset elimination order
       });
@@ -246,6 +244,16 @@ export const playerSlice = createSlice({
         }
       });
     },
+
+    // New reducer to update all players' health to a specific value
+    setAllPlayersHealth: (state, action: PayloadAction<number>) => {
+      state.players.forEach((player) => {
+        if (!player.isEliminated) {
+          // Only update health for active players
+          player.health = Math.max(1, action.payload); // Ensure health is at least 1
+        }
+      });
+    },
   },
 });
 
@@ -256,6 +264,7 @@ export const {
   decrementPlayerHealth,
   resetPlayersHealth,
   setPlayerBorderSegments,
+  setAllPlayersHealth, // Export the new action
 } = playerSlice.actions;
 
 export default playerSlice.reducer;

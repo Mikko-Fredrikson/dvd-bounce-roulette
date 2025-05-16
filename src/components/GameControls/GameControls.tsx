@@ -16,6 +16,7 @@ import {
 const GameControls: React.FC = () => {
   const dispatch = useDispatch();
   const gameStatus = useSelector((state: RootState) => state.gameState.status);
+  const playerHealth = useSelector((state: RootState) => state.settings.playerHealth); // Get playerHealth from settings
 
   const handleStart = () => {
     dispatch(startGame());
@@ -31,7 +32,7 @@ const GameControls: React.FC = () => {
 
   const handleReset = () => {
     dispatch(resetGame());
-    dispatch(resetPlayersHealth());
+    dispatch(resetPlayersHealth(playerHealth)); // Dispatch with playerHealth from settings
     dispatch(resetLogo()); // Dispatch resetLogo
   };
 

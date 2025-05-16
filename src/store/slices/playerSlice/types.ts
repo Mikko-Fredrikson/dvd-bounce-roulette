@@ -1,3 +1,5 @@
+import { RedistributionMode } from "../settingsSlice/settingsSlice";
+
 export interface Player {
   id: string;
   name: string;
@@ -15,6 +17,7 @@ export interface PlayerState {
 
 export interface AddPlayerPayload {
   name: string;
+  initialHealth: number; // Add initialHealth field
 }
 
 export interface UpdatePlayerNamePayload {
@@ -32,5 +35,3 @@ export interface SetPlayerBorderSegmentsPayload {
   sectionStart: number;
   sectionLength: number;
 }
-
-import { RedistributionMode } from "../../settingsSlice/settingsSlice"; // Import type

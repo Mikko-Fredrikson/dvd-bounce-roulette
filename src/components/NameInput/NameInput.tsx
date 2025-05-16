@@ -9,11 +9,12 @@ const NameInput: React.FC = () => {
   const [playerName, setPlayerName] = useState<string>("");
   const players = useAppSelector((state) => state.players.players);
   const gameStatus = useAppSelector((state) => state.gameState.status);
+  const initialHealth = useAppSelector((state) => state.settings.playerHealth); // Get initialHealth from settings
   const dispatch = useAppDispatch();
 
   const handleAddPlayer = () => {
     if (playerName.trim()) {
-      dispatch(addPlayer({ name: playerName.trim() }));
+      dispatch(addPlayer({ name: playerName.trim(), initialHealth })); // Pass initialHealth when adding player
       setPlayerName("");
     }
   };

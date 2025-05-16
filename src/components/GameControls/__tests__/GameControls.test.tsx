@@ -18,6 +18,7 @@ describe("GameControls Component", () => {
     const initialState = {
       gameState: { status: "idle" },
       players: { players: [] },
+      settings: { playerHealth: 5 }, // Add settings slice with playerHealth
       // Updated logo state to match the refactored slice
       logo: {
         position: { x: 0, y: 0 },
@@ -45,7 +46,9 @@ describe("GameControls Component", () => {
 
     // Check if the correct actions were dispatched
     expect(store.dispatch).toHaveBeenCalledWith(resetGame());
-    expect(store.dispatch).toHaveBeenCalledWith(resetPlayersHealth());
+    expect(store.dispatch).toHaveBeenCalledWith(
+      resetPlayersHealth(initialState.settings.playerHealth),
+    ); // Pass playerHealth
     expect(store.dispatch).toHaveBeenCalledWith(resetLogo()); // Expect resetLogo
 
     // Verify the number of dispatches if needed

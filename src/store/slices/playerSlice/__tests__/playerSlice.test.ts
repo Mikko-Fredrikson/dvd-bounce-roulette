@@ -6,6 +6,7 @@ import playerReducer, {
   decrementPlayerHealth,
   resetPlayersHealth,
   setPlayerBorderSegments, // Import new action
+  setAllPlayersHealth, // Import the new action
   initialState,
 } from "../playerSlice";
 import { PlayerState, Player } from "../types";
@@ -34,12 +35,12 @@ describe("player reducer", () => {
 
     const nextState = playerReducer(
       previousState,
-      addPlayer({ name: "Player 1" }),
+      addPlayer({ name: "Player 1", initialHealth: 5 }),
     );
 
     expect(nextState.players.length).toBe(1);
     expect(nextState.players[0].name).toBe("Player 1");
-    expect(nextState.players[0].health).toBe(3); // Default health
+    expect(nextState.players[0].health).toBe(5); // Health should be from payload
     expect(nextState.players[0].color).toBeDefined();
     // Segments are now calculated immediately
     expect(nextState.players[0].sectionStart).toBe(0);
@@ -49,7 +50,7 @@ describe("player reducer", () => {
 
   it("should handle addPlayer and calculate initial segments", () => {
     let state = initialState;
-    state = playerReducer(state, addPlayer({ name: "P1" }));
+    state = playerReducer(state, addPlayer({ name: "P1", initialHealth: 3 }));
     expect(state.players.length).toBe(1);
     expect(state.players[0].name).toBe("P1");
     expect(state.players[0].health).toBe(3);
@@ -58,14 +59,14 @@ describe("player reducer", () => {
     expect(state.players[0].sectionStart).toBe(0);
     expect(state.players[0].sectionLength).toBe(1.0);
 
-    state = playerReducer(state, addPlayer({ name: "P2" }));
+    state = playerReducer(state, addPlayer({ name: "P2", initialHealth: 3 }));
     expect(state.players.length).toBe(2);
     expect(state.players[0].sectionStart).toBe(0);
     expect(state.players[0].sectionLength).toBe(0.5);
     expect(state.players[1].sectionStart).toBe(0.5);
     expect(state.players[1].sectionLength).toBe(0.5);
 
-    state = playerReducer(state, addPlayer({ name: "P3" }));
+    state = playerReducer(state, addPlayer({ name: "P3", initialHealth: 3 }));
     expect(state.players.length).toBe(3);
     expect(state.players[0].sectionLength).toBeCloseTo(1 / 3);
     expect(state.players[1].sectionLength).toBeCloseTo(1 / 3);
@@ -538,12 +539,12 @@ describe("player reducer", () => {
     };
     const previousState: PlayerState = { players: [p1, p2, p3] };
 
-    const nextState = playerReducer(previousState, resetPlayersHealth());
+    const nextState = playerReducer(previousState, resetPlayersHealth(5)); // Test with a new health value
 
     expect(nextState.players.length).toBe(3);
     // Check health and elimination status reset
     nextState.players.forEach((player) => {
-      expect(player.health).toBe(3);
+      expect(player.health).toBe(5); // Health should be the new value
       expect(player.isEliminated).toBe(false);
     });
     // Check segments recalculated evenly
@@ -910,5 +911,62 @@ describe("player reducer", () => {
     // P1 gets all the length
     expect(neighbor1?.sectionLength).toBeCloseTo(1.0);
     expect(neighbor1?.sectionStart).toBeCloseTo(0); // Start remains 0
+  });
+
+  // --- Tests for setAllPlayersHealth ---
+  it("should handle setAllPlayersHealth for active players", () => {
+    const p1: Player = {
+      id: "1",
+      name: "P1",
+      health: 3,
+      color: "#c0",
+      sectionStart: 0,
+      sectionLength: 0.5,
+      isEliminated: false,
+    };
+    const p2: Player = {
+      id: "2",
+      name: "P2",
+      health: 1,
+      color: "#c1",
+      sectionStart: 0.5,
+      sectionLength: 0.5,
+      isEliminated: false,
+    };
+    const p3: Player = {
+      id: "3",
+      name: "P3",
+      health: 2,
+      color: "#c2",
+      sectionStart: 0,
+      sectionLength: 0,
+      isEliminated: true, // Eliminated player
+    };
+    const previousState: PlayerState = { players: [p1, p2, p3] };
+
+    const nextState = playerReducer(previousState, setAllPlayersHealth(5));
+
+    expect(nextState.players.find((p) => p.id === "1")?.health).toBe(5);
+    expect(nextState.players.find((p) => p.id === "2")?.health).toBe(5);
+    expect(nextState.players.find((p) => p.id === "3")?.health).toBe(2); // Eliminated player's health should not change
+  });
+
+  it("should ensure health is at least 1 when using setAllPlayersHealth", () => {
+    const p1: Player = {
+      id: "1",
+      name: "P1",
+      health: 3,
+      color: "#c0",
+      sectionStart: 0,
+      sectionLength: 1,
+      isEliminated: false,
+    };
+    const previousState: PlayerState = { players: [p1] };
+
+    const nextState = playerReducer(previousState, setAllPlayersHealth(0));
+    expect(nextState.players[0].health).toBe(1); // Health should be clamped to 1
+
+    const nextState2 = playerReducer(previousState, setAllPlayersHealth(-5));
+    expect(nextState2.players[0].health).toBe(1); // Health should be clamped to 1
   });
 });

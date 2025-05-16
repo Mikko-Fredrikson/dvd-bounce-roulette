@@ -13,6 +13,7 @@ import playerReducer from "../../../store/slices/playerSlice/playerSlice";
 import gameStateReducer, {
   resetGame,
 } from "../../../store/slices/gameStateSlice/gameStateSlice";
+import settingsReducer from "../../../store/slices/settingsSlice/settingsSlice"; // Import settingsReducer
 import { resetPlayersHealth } from "../../../store/slices/playerSlice/playerSlice";
 import { resetLogo } from "../../../store/slices/logoSlice/logoSlice";
 import logoReducer from "../../../store/slices/logoSlice/logoSlice";
@@ -27,14 +28,30 @@ vi.mock("react-confetti", () => ({
   default: () => <div data-testid="confetti">Confetti</div>,
 }));
 
-const renderWinnerDisplay = (initialState = {}) => {
+const defaultSettings = {
+  playerHealth: 3,
+  angleVariance: 0,
+  logoSpeed: 5,
+  customLogo: null,
+  redistributionMode: "adjacent" as "adjacent", // Ensure correct type
+};
+
+const renderWinnerDisplay = (initialState: any = {}) => {
   const store = configureStore({
     reducer: {
       players: playerReducer,
       gameState: gameStateReducer,
-      logo: logoReducer, // Add logo reducer for resetLogo action
+      logo: logoReducer,
+      settings: settingsReducer, // Add settingsReducer
     },
-    preloadedState: initialState,
+    preloadedState: {
+      settings: defaultSettings, // Provide default settings
+      ...initialState,
+      // Ensure nested states are merged correctly
+      players: { players: [], ...initialState.players },
+      gameState: { status: "initial", ...initialState.gameState },
+      logo: { position: { x: 0, y: 0 }, velocity: { dx: 0, dy: 0 }, color: "white", ...initialState.logo },
+    },
   });
   const dispatchSpy = vi.spyOn(store, "dispatch");
   render(
@@ -133,6 +150,7 @@ describe("WinnerDisplay Component", () => {
   });
 
   it("should dispatch reset actions when reset button is clicked", async () => {
+    const initialPlayerHealth = 5; // Define an initial health value for the test
     const { dispatchSpy } = renderWinnerDisplay({
       gameState: { status: "finished" },
       players: {
@@ -146,6 +164,7 @@ describe("WinnerDisplay Component", () => {
           },
         ],
       },
+      settings: { ...defaultSettings, playerHealth: initialPlayerHealth }, // Pass settings with specific playerHealth
     });
 
     const resetButton = screen.getByRole("button", { name: /play again/i });
@@ -153,7 +172,8 @@ describe("WinnerDisplay Component", () => {
 
     await waitFor(() => {
       expect(dispatchSpy).toHaveBeenCalledWith(resetGame());
-      expect(dispatchSpy).toHaveBeenCalledWith(resetPlayersHealth());
+      // Expect resetPlayersHealth to be called with the health from settings
+      expect(dispatchSpy).toHaveBeenCalledWith(resetPlayersHealth(initialPlayerHealth));
       expect(dispatchSpy).toHaveBeenCalledWith(resetLogo());
     });
   });
