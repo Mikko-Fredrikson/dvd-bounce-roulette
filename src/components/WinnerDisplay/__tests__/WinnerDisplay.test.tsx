@@ -6,7 +6,7 @@ import {
   within,
 } from "@testing-library/react"; // Import within
 import { Provider } from "react-redux";
-import { vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import WinnerDisplay from "../WinnerDisplay";
 import { configureStore } from "@reduxjs/toolkit";
 import playerReducer from "../../../store/slices/playerSlice/playerSlice";
@@ -50,7 +50,12 @@ const renderWinnerDisplay = (initialState: any = {}) => {
       // Ensure nested states are merged correctly
       players: { players: [], ...initialState.players },
       gameState: { status: "initial", ...initialState.gameState },
-      logo: { position: { x: 0, y: 0 }, velocity: { dx: 0, dy: 0 }, color: "white", ...initialState.logo },
+      logo: {
+        position: { x: 0, y: 0 },
+        velocity: { dx: 0, dy: 0 },
+        color: "white",
+        ...initialState.logo,
+      },
     },
   });
   const dispatchSpy = vi.spyOn(store, "dispatch");
@@ -173,7 +178,9 @@ describe("WinnerDisplay Component", () => {
     await waitFor(() => {
       expect(dispatchSpy).toHaveBeenCalledWith(resetGame());
       // Expect resetPlayersHealth to be called with the health from settings
-      expect(dispatchSpy).toHaveBeenCalledWith(resetPlayersHealth(initialPlayerHealth));
+      expect(dispatchSpy).toHaveBeenCalledWith(
+        resetPlayersHealth(initialPlayerHealth),
+      );
       expect(dispatchSpy).toHaveBeenCalledWith(resetLogo());
     });
   });
