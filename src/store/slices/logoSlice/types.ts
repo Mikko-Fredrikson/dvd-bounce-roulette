@@ -9,6 +9,7 @@ export interface Size {
 }
 
 export interface LogoState {
+  direction: { dx: number; dy: number }; // Normalized direction vector
   position: Vector2D;
   initialPosition: Vector2D; // Add initial position
   velocity: Vector2D;

@@ -14,9 +14,15 @@ const normalizeVector = (vec: {
   return { dx: vec.x / magnitude, dy: vec.y / magnitude };
 };
 
+const getRandomDirection = (): Vector2D => {
+  const angle = Math.random() * 2 * Math.PI; // Random angle in radians
+  const x = Math.cos(angle);
+  const y = Math.sin(angle);
+  return { x, y };
+};
+
 // Normalize the initial velocity to get the initial direction
-const initialVelocity = { x: 5, y: 3 };
-const initialDirection = normalizeVector(initialVelocity);
+const initialDirection = normalizeVector(getRandomDirection());
 
 const DEFAULT_LOGO_SIZE: Size = { width: 80, height: 50 }; // Example size
 const DEFAULT_INITIAL_POSITION: Vector2D = { x: 0, y: 0 }; // Default initial position

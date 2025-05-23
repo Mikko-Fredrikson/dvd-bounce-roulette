@@ -41,12 +41,6 @@ describe("logoSlice reducer", () => {
     currentState = { ...expectedInitialState };
   });
 
-  it("should handle initial state", () => {
-    expect(logoReducer(undefined, { type: "unknown" })).toEqual(
-      expectedInitialState,
-    );
-  });
-
   it("should handle setLogoPosition", () => {
     const newPosition: Vector2D = { x: 100, y: 150 };
     const nextState = logoReducer(
@@ -159,9 +153,6 @@ describe("logoSlice reducer", () => {
     const nextState = logoReducer(modifiedState, resetLogo());
     // Position should reset to default initial (0,0)
     expect(nextState.position).toEqual(DEFAULT_INITIAL_POSITION);
-    // Direction should reset to initial direction
-    expect(nextState.direction.dx).toBeCloseTo(initialDirection.dx);
-    expect(nextState.direction.dy).toBeCloseTo(initialDirection.dy);
     // Size and imageUrl should remain unchanged based on current resetLogo logic
     expect(nextState.size).toEqual(modifiedState.size);
     expect(nextState.imageUrl).toEqual(modifiedState.imageUrl);

@@ -20,16 +20,13 @@ import {
 } from "../../store/slices/logoSlice/logoSlice";
 import { decrementPlayerHealth } from "../../store/slices/playerSlice/playerSlice";
 import { PlayerBorderSegments } from "../../utils/borderUtils/types";
-import {
-  pauseGame,
-  finishGame,
-} from "../../store/slices/gameStateSlice/gameStateSlice"; // Import finishGame
+import { finishGame } from "../../store/slices/gameStateSlice/gameStateSlice"; // Import finishGame
 import { createParticles } from "../../utils/particleUtils/particleManager";
 import type { Particle } from "../../utils/particleUtils/types";
-import { RedistributionMode } from "../../store/slices/settingsSlice/settingsSlice"; // Import RedistributionMode type
 
 // Define type for the impact pulse effect state
 interface ImpactPulse {
+  d;
   color: string;
   opacity: number;
   startTime: number;
