@@ -1,27 +1,22 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { LogoState, Vector2D, Size } from "./types";
 
-const getRandomDirection = (): Vector2D => {
-  const angle = Math.random() * 2 * Math.PI; // Random angle in radians
-  const x = Math.cos(angle);
-  const y = Math.sin(angle);
-  return { x, y };
-};
-
 // Helper function to normalize a vector
 const normalizeVector = (vec: {
   x: number;
   y: number;
-}): { x: number; y: number } => {
+}): { dx: number; dy: number } => {
   const magnitude = Math.sqrt(vec.x * vec.x + vec.y * vec.y);
   if (magnitude === 0) {
     // Avoid division by zero, return a default direction (e.g., right)
-    return { x: 1, y: 0 };
+    return { dx: 1, dy: 0 };
   }
-  return { x: vec.x / magnitude, y: vec.y / magnitude };
+  return { dx: vec.x / magnitude, dy: vec.y / magnitude };
 };
 
-const initialDirection = normalizeVector(getRandomDirection());
+// Normalize the initial velocity to get the initial direction
+const initialVelocity = { x: 5, y: 3 };
+const initialDirection = normalizeVector(initialVelocity);
 
 const DEFAULT_LOGO_SIZE: Size = { width: 80, height: 50 }; // Example size
 const DEFAULT_INITIAL_POSITION: Vector2D = { x: 0, y: 0 }; // Default initial position
@@ -61,17 +56,17 @@ const logoSlice = createSlice({
           "Attempted to set zero direction vector. Keeping previous.",
         );
       } else {
-        state.direction.x = action.payload.dx / magnitude; // Use x
-        state.direction.y = action.payload.dy / magnitude; // Use y
+        state.direction.dx = action.payload.dx / magnitude;
+        state.direction.dy = action.payload.dy / magnitude;
       }
     },
     // Reverses only the direction component
     reverseVelocityX(state) {
-      state.direction.x *= -1; // Use x
+      state.direction.dx *= -1;
     },
     // Reverses only the direction component
     reverseVelocityY(state) {
-      state.direction.y *= -1; // Use y
+      state.direction.dy *= -1;
     },
     setLogoSize(state, action: PayloadAction<Size>) {
       state.size = action.payload;
