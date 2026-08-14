@@ -8,6 +8,7 @@ import {
   setCustomLogo, // Import setCustomLogo action
   setPlayerHealth, // Import setPlayerHealth action
   setRedistributionMode, // Import the new action
+  setHealOnElimination, // Import the new action
   RedistributionMode, // Import the type
 } from "../../store/slices/settingsSlice/settingsSlice"; // Import action
 import { setAllPlayersHealth } from "../../store/slices/playerSlice/playerSlice"; // Import the new action
@@ -27,6 +28,9 @@ const ControlPanel = () => {
   const redistributionMode = useAppSelector(
     (state) => state.settings.redistributionMode,
   ); // Get redistributionMode from state
+  const healOnElimination = useAppSelector(
+    (state) => state.settings.healOnElimination,
+  ); // Get healOnElimination from state
   const [logoPreview, setLogoPreview] = useState<string | null>(customLogo);
 
   const handleAngleVarianceChange = (
@@ -86,6 +90,12 @@ const ControlPanel = () => {
   ) => {
     const value = event.target.value as RedistributionMode;
     dispatch(setRedistributionMode(value));
+  };
+
+  const handleHealOnEliminationChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    dispatch(setHealOnElimination(event.target.checked));
   };
 
   return (
@@ -299,6 +309,29 @@ const ControlPanel = () => {
               <p className="text-xs text-slate-500">
                 Choose how border space is redistributed when a player is
                 eliminated.
+              </p>
+            </div>
+
+            {/* Heal on Elimination */}
+            <div className="space-y-3 bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+              <label
+                htmlFor="heal-on-elimination"
+                className="flex items-center space-x-2 cursor-pointer"
+              >
+                <input
+                  id="heal-on-elimination"
+                  type="checkbox"
+                  checked={!!healOnElimination}
+                  onChange={handleHealOnEliminationChange}
+                  className="form-checkbox h-4 w-4 text-indigo-600 rounded transition duration-150 ease-in-out"
+                />
+                <span className="text-sm font-medium text-slate-700">
+                  Heal on Elimination
+                </span>
+              </label>
+              <p className="text-xs text-slate-500">
+                Every remaining player regains 1 HP when a player is eliminated,
+                up to their starting health.
               </p>
             </div>
           </div>

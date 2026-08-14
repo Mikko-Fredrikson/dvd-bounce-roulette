@@ -6,6 +6,7 @@ import settingsReducer, {
   resetSettings,
   setLogoSpeed,
   setRedistributionMode, // Import the new action
+  setHealOnElimination, // Import the new action
   SettingsState,
 } from "../settingsSlice";
 
@@ -16,6 +17,7 @@ describe("settings slice", () => {
     customLogo: null,
     logoSpeed: 3, // Was 5
     redistributionMode: "adjacent", // Add initial redistribution mode
+    healOnElimination: false, // Opt-in, off by default
   };
 
   it("should handle initial state", () => {
@@ -62,6 +64,14 @@ describe("settings slice", () => {
     expect(actual.redistributionMode).toEqual("adjacent");
   });
 
+  it("should handle setHealOnElimination", () => {
+    let actual = settingsReducer(initialState, setHealOnElimination(true));
+    expect(actual.healOnElimination).toBe(true);
+
+    actual = settingsReducer(actual, setHealOnElimination(false));
+    expect(actual.healOnElimination).toBe(false);
+  });
+
   it("should handle resetSettings", () => {
     const modifiedState: SettingsState = {
       angleVariance: 30, // Changed from 20 to ensure it's different
@@ -69,6 +79,7 @@ describe("settings slice", () => {
       customLogo: "test.png",
       logoSpeed: 10,
       redistributionMode: "equal", // Include redistributionMode in modified state
+      healOnElimination: true, // Include healOnElimination in modified state
     };
     const actual = settingsReducer(modifiedState, resetSettings());
     expect(actual).toEqual(initialState);

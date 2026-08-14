@@ -12,6 +12,7 @@ import gameStateReducer, {
 } from "../../../store/slices/gameStateSlice/gameStateSlice";
 import settingsReducer, {
   setAngleVariance,
+  setHealOnElimination,
 } from "../../../store/slices/settingsSlice/settingsSlice";
 import { RootState } from "../../../store";
 
@@ -147,6 +148,28 @@ describe("ControlPanel Settings Tab", () => {
     fireEvent.change(sliderInput, { target: { value: "20" } });
 
     expect(store.dispatch).toHaveBeenCalledWith(setAngleVariance(20));
+  });
+
+  it("should dispatch setHealOnElimination when the heal toggle is clicked", () => {
+    const store = createMockStore();
+    vi.spyOn(store, "dispatch");
+    render(
+      <Provider store={store}>
+        <ControlPanel />
+      </Provider>,
+    );
+
+    const settingsTab = screen.getByRole("tab", { name: /settings/i });
+    fireEvent.click(settingsTab);
+
+    const toggle = screen.getByRole("checkbox", {
+      name: /heal on elimination/i,
+    });
+    expect(toggle).not.toBeChecked();
+
+    fireEvent.click(toggle);
+
+    expect(store.dispatch).toHaveBeenCalledWith(setHealOnElimination(true));
   });
 
   it("should display the updated angle variance value", () => {
