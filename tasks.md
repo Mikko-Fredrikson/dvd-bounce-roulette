@@ -119,6 +119,7 @@
   - [x] Add small impact visual effect at the collision point (Low) - Updated: Implemented as box-shadow pulse
   - [x] Add a subtle trail effect to the moving logo (Medium)
   - [x] Add screen shake on collision (Low) # Task completed
+  - [x] Add text outline to player name boxes for readability on light colors (Low) # New Task
   - [ ] Add border segment hit/elimination animations (Medium)
     - [ ] Glow/flash effect on hit (Low)
     - [ ] Fade/shatter/shrink animation on elimination (Medium)
