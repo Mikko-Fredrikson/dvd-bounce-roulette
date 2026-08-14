@@ -108,6 +108,9 @@
         - [x] Add UI toggle in `ControlPanel` for heal on elimination (Low) # New Task
         - [x] Heal active players in `playerSlice` elimination logic, capped at max health (Medium) # New Task
         - [x] Update relevant tests for heal on elimination (Medium) # New Task
+        - [x] Show a transient "+1" blip next to player HP in the Players tab when a heal lands (Low) # New Task
+          - [x] Create useHealBlips hook to detect real health increases (Low) # New Task
+          - [x] Render the blip in `NameInput` and add the fade animation (Low) # New Task
       - [x] Update the player list/state.
     - [x] Check for win conditions (e.g., only one player remaining). # Task completed
       - [x] Dispatch `finishGame` action when only one player remains. # Task completed

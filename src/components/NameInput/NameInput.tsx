@@ -4,13 +4,24 @@ import {
   addPlayer,
   removePlayer,
 } from "../../store/slices/playerSlice/playerSlice";
+import useHealBlips from "../../hooks/useHealBlips/useHealBlips";
 
 const NameInput: React.FC = () => {
   const [playerName, setPlayerName] = useState<string>("");
   const players = useAppSelector((state) => state.players.players);
   const gameStatus = useAppSelector((state) => state.gameState.status);
   const initialHealth = useAppSelector((state) => state.settings.playerHealth); // Get initialHealth from settings
+  const healOnElimination = useAppSelector(
+    (state) => state.settings.healOnElimination,
+  );
   const dispatch = useAppDispatch();
+
+  // Only announce heals during play - a reset also raises health, and that is
+  // not something to celebrate.
+  const healBlips = useHealBlips(
+    players,
+    !!healOnElimination && gameStatus === "running",
+  );
 
   const handleAddPlayer = () => {
     if (playerName.trim()) {
@@ -88,7 +99,17 @@ const NameInput: React.FC = () => {
                 </div>
                 <div className="flex items-center">
                   {!player.isEliminated && (
-                    <span className="mr-3">HP: {player.health}</span>
+                    <span className="mr-3 flex items-center gap-1">
+                      <span>HP: {player.health}</span>
+                      {healBlips.has(player.id) && (
+                        <span
+                          data-testid={`heal-blip-${index}`}
+                          className="animate-heal-blip text-xs font-bold text-green-600"
+                        >
+                          +{healBlips.get(player.id)}
+                        </span>
+                      )}
+                    </span>
                   )}
                   <button
                     data-testid={`remove-player-${index}`}

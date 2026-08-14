@@ -1,10 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import NameInput from "../NameInput";
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
-import playerReducer, { addPlayer } from "../../../store/slices/playerSlice/playerSlice";
+import playerReducer, {
+  addPlayer,
+  decrementPlayerHealth,
+  setAllPlayersHealth,
+} from "../../../store/slices/playerSlice/playerSlice";
 import gameStateReducer from "../../../store/slices/gameStateSlice/gameStateSlice";
+import type { GameStatus } from "../../../store/slices/gameStateSlice/types";
 import settingsReducer from "../../../store/slices/settingsSlice/settingsSlice";
 import type { RedistributionMode } from "../../../store/slices/settingsSlice/types";
 
@@ -121,5 +126,120 @@ describe("NameInput", () => {
 
     expect(screen.queryByTestId("remove-player-0")).not.toBeInTheDocument();
     expect(screen.queryByText("Remove Test")).not.toBeInTheDocument();
+  });
+
+  describe("heal blip", () => {
+    // Two players; the second is on 1 HP so the next hit eliminates them and
+    // the survivor heals. The survivor starts below max so the heal lands.
+    const buildHealStore = (healOnElimination: boolean) =>
+      configureStore({
+        reducer: {
+          players: playerReducer,
+          gameState: gameStateReducer,
+          settings: settingsReducer,
+        },
+        preloadedState: {
+          settings: {
+            playerHealth: 3,
+            angleVariance: 0,
+            logoSpeed: 5,
+            customLogo: null,
+            redistributionMode: "adjacent" as RedistributionMode,
+            healOnElimination,
+          },
+          players: {
+            players: [
+              {
+                id: "1",
+                name: "Survivor",
+                health: 2,
+                color: "#ff0000",
+                sectionStart: 0,
+                sectionLength: 0.5,
+                isEliminated: false,
+                eliminationOrder: null,
+              },
+              {
+                id: "2",
+                name: "Doomed",
+                health: 1,
+                color: "#00ff00",
+                sectionStart: 0.5,
+                sectionLength: 0.5,
+                isEliminated: false,
+                eliminationOrder: null,
+              },
+            ],
+          },
+          gameState: { status: "running" as GameStatus },
+        },
+      });
+
+    const eliminate = (store: ReturnType<typeof buildHealStore>) =>
+      store.dispatch(
+        decrementPlayerHealth({
+          playerId: "2",
+          healOnElimination: true,
+          maxHealth: 3,
+        }),
+      );
+
+    it("shows a +1 next to a player who actually healed", async () => {
+      const store = buildHealStore(true);
+      render(
+        <Provider store={store}>
+          <NameInput />
+        </Provider>,
+      );
+
+      expect(screen.getByText("HP: 2")).toBeInTheDocument();
+
+      act(() => {
+        eliminate(store);
+      });
+
+      expect(await screen.findByText("+1")).toBeInTheDocument();
+      expect(screen.getByText("HP: 3")).toBeInTheDocument();
+    });
+
+    it("shows no blip for a player already at max health", () => {
+      const store = buildHealStore(true);
+      // Push the survivor to max first, so the heal is capped to a no-op
+      store.dispatch(setAllPlayersHealth(3));
+
+      render(
+        <Provider store={store}>
+          <NameInput />
+        </Provider>,
+      );
+
+      act(() => {
+        eliminate(store);
+      });
+
+      expect(screen.queryByText("+1")).not.toBeInTheDocument();
+    });
+
+    it("shows no blip when the heal setting is off", () => {
+      const store = buildHealStore(false);
+      render(
+        <Provider store={store}>
+          <NameInput />
+        </Provider>,
+      );
+
+      act(() => {
+        // Even if a heal somehow lands, the display stays quiet when disabled
+        store.dispatch(
+          decrementPlayerHealth({
+            playerId: "2",
+            healOnElimination: true,
+            maxHealth: 3,
+          }),
+        );
+      });
+
+      expect(screen.queryByText("+1")).not.toBeInTheDocument();
+    });
   });
 });
