@@ -39,4 +39,18 @@ describe("PlayerNameBox", () => {
     render(<PlayerNameBox {...defaultProps} hp={75} />);
     expect(screen.getByText("HP: 75")).toBeInTheDocument();
   });
+
+  it("outlines the text so it stays readable on light player colors", () => {
+    // Yellow (#F5FF33) is in the palette and white text alone is invisible on it
+    render(<PlayerNameBox {...defaultProps} color="#F5FF33" />);
+
+    const element = screen.getByTestId("player-name-box");
+    const { textShadow } = element.style;
+
+    // Hard outline on all four corners, so the glyph edge reads against any background
+    expect(textShadow).toContain("-1px -1px 0");
+    expect(textShadow).toContain("1px -1px 0");
+    expect(textShadow).toContain("-1px 1px 0");
+    expect(textShadow).toContain("1px 1px 0");
+  });
 });
