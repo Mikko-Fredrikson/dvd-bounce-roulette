@@ -19,7 +19,11 @@ import {
   setLogoColor,
 } from "../../store/slices/logoSlice/logoSlice";
 import { decrementPlayerHealth } from "../../store/slices/playerSlice/playerSlice";
-import { PlayerBorderSegments } from "../../utils/borderUtils/types";
+import {
+  BorderSegment,
+  PlayerBorderSegments,
+} from "../../utils/borderUtils/types";
+import { calculateSegmentDividers } from "../../utils/borderUtils/calculateSegmentDividers";
 import { finishGame } from "../../store/slices/gameStateSlice/gameStateSlice"; // Import finishGame
 import { createParticles } from "../../utils/particleUtils/particleManager";
 import type { Particle } from "../../utils/particleUtils/types";
@@ -38,6 +42,9 @@ interface GameAreaProps {
   height?: number;
   animationSpeed?: number;
 }
+
+/** Thickness of the player border bars, in pixels. */
+const BORDER_THICKNESS = 15;
 
 /**
  * GameArea component that maintains a fixed 3:2 aspect ratio regardless of window size
@@ -165,38 +172,47 @@ const GameArea: React.FC<GameAreaProps> = ({
 
       drawLogo(ctx);
 
+      // Bottom and left are mirrored; this must stay in sync with the
+      // pointToCheck computation used for collision detection below.
+      const traceSegment = (segment: BorderSegment) => {
+        const { side, startPosition, length } = segment;
+        ctx.beginPath();
+
+        switch (side.name) {
+          case "top":
+            ctx.moveTo(startPosition, 0);
+            ctx.lineTo(startPosition + length, 0);
+            break;
+          case "right":
+            ctx.moveTo(width, startPosition);
+            ctx.lineTo(width, startPosition + length);
+            break;
+          case "bottom":
+            ctx.moveTo(width - startPosition, height);
+            ctx.lineTo(width - (startPosition + length), height);
+            break;
+          case "left":
+            ctx.moveTo(0, height - startPosition);
+            ctx.lineTo(0, height - (startPosition + length));
+            break;
+        }
+
+        ctx.stroke();
+      };
+
+      ctx.lineWidth = BORDER_THICKNESS;
+
       playerBorderSegments.forEach((playerSegment) => {
         const { segments, playerColor } = playerSegment;
 
         ctx.strokeStyle = playerColor;
-        ctx.lineWidth = 15;
-
-        segments.forEach((segment) => {
-          const { side, startPosition, length } = segment;
-          ctx.beginPath();
-
-          switch (side.name) {
-            case "top":
-              ctx.moveTo(startPosition, 0);
-              ctx.lineTo(startPosition + length, 0);
-              break;
-            case "right":
-              ctx.moveTo(width, startPosition);
-              ctx.lineTo(width, startPosition + length);
-              break;
-            case "bottom":
-              ctx.moveTo(width - startPosition, height);
-              ctx.lineTo(width - (startPosition + length), height);
-              break;
-            case "left":
-              ctx.moveTo(0, height - startPosition);
-              ctx.lineTo(0, height - (startPosition + length));
-              break;
-          }
-
-          ctx.stroke();
-        });
+        segments.forEach(traceSegment);
       });
+
+      // Drawn last, on top of the bars, so the separators consume none of any
+      // player's border length.
+      ctx.strokeStyle = "#000000";
+      calculateSegmentDividers(playerBorderSegments).forEach(traceSegment);
 
       drawParticles(ctx);
     },

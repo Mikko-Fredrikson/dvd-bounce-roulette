@@ -125,6 +125,9 @@
   - [x] Add a subtle trail effect to the moving logo (Medium)
   - [x] Add screen shake on collision (Low) # Task completed
   - [x] Add text outline to player name boxes for readability on light colors (Low) # New Task
+  - [x] Add thin black divider between adjacent player border segments (Low) # New Task
+    - [x] Add utility to derive divider positions from player border segments (Low) # New Task
+    - [x] Draw dividers on top of the bars in `GameArea` so they consume no border length (Low) # New Task
   - [ ] Add border segment hit/elimination animations (Medium)
     - [ ] Glow/flash effect on hit (Low)
     - [ ] Fade/shatter/shrink animation on elimination (Medium)
