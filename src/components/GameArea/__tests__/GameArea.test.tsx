@@ -13,7 +13,11 @@ import gameStateReducer, {
   pauseGame,
   finishGame, // Added finishGame import
 } from "../../../store/slices/gameStateSlice/gameStateSlice";
-import settingsReducer from "../../../store/slices/settingsSlice/settingsSlice";
+import settingsReducer, {
+  SettingsState,
+} from "../../../store/slices/settingsSlice/settingsSlice";
+import { DecrementPlayerHealthPayload } from "../../../store/slices/playerSlice/types";
+import { LogoState } from "../../../store/slices/logoSlice/types";
 import {
   describe,
   it,
@@ -369,6 +373,69 @@ describe("GameArea Collision Detection with Angle Variance", () => {
         }),
       );
       expect(dispatchSpy).toHaveBeenCalledWith(decrementPlayerHealth("p1"));
+    });
+  });
+
+  // Collect the decrementPlayerHealth actions the game loop actually dispatched,
+  // so we can assert on the payload GameArea threaded through from settings.
+  const healthActionsFrom = (
+    spy: ReturnType<typeof renderGameArea>["dispatchSpy"],
+  ): DecrementPlayerHealthPayload[] =>
+    spy.mock.calls
+      .map((call) => call[0] as { type?: string; payload?: unknown })
+      .filter((action) => action?.type === decrementPlayerHealth.type)
+      .map((action) => action.payload as DecrementPlayerHealthPayload);
+
+  const healSettings = (healOnElimination: boolean): SettingsState => ({
+    angleVariance: 0,
+    playerHealth: 5,
+    customLogo: null,
+    logoSpeed: 5,
+    redistributionMode: "adjacent",
+    healOnElimination,
+  });
+
+  const logoAtRightBorder = (): LogoState => ({
+    position: { x: 900 - 50 / 2 - 1, y: 300 },
+    direction: { dx: 1, dy: 0 },
+    size: { width: 50, height: 30 },
+    initialPosition: { x: 450, y: 300 },
+    velocity: { x: 5, y: 0 },
+    color: "#ffffff",
+    imageUrl: null,
+    angle: 0,
+    speed: 5,
+  });
+
+  it("should pass the heal settings through to decrementPlayerHealth on collision", () => {
+    const { dispatchSpy } = renderGameArea({
+      logo: logoAtRightBorder(),
+      settings: healSettings(true),
+      gameState: { status: "running" },
+    });
+
+    advanceFrames(1);
+
+    const payloads = healthActionsFrom(dispatchSpy);
+    expect(payloads.length).toBeGreaterThan(0);
+    expect(payloads[0].healOnElimination).toBe(true);
+    // maxHealth comes from settings.playerHealth so healing never exceeds the start value
+    expect(payloads[0].maxHealth).toBe(5);
+  });
+
+  it("should not request healing when the setting is off", () => {
+    const { dispatchSpy } = renderGameArea({
+      logo: logoAtRightBorder(),
+      settings: healSettings(false),
+      gameState: { status: "running" },
+    });
+
+    advanceFrames(1);
+
+    const payloads = healthActionsFrom(dispatchSpy);
+    expect(payloads.length).toBeGreaterThan(0);
+    payloads.forEach((payload) => {
+      expect(payload.healOnElimination).toBe(false);
     });
   });
 

@@ -969,4 +969,127 @@ describe("player reducer", () => {
     const nextState2 = playerReducer(previousState, setAllPlayersHealth(-5));
     expect(nextState2.players[0].health).toBe(1); // Health should be clamped to 1
   });
+
+  describe("heal on elimination", () => {
+    // Survivors start below max so the +1 is observable
+    const buildState = (): PlayerState => ({
+      players: [
+        {
+          id: "1",
+          name: "P1",
+          health: 2,
+          color: "#c0",
+          sectionStart: 0,
+          sectionLength: 1 / 3,
+          isEliminated: false,
+          eliminationOrder: null,
+        },
+        {
+          id: "2",
+          name: "P2",
+          health: 1, // About to be eliminated
+          color: "#c1",
+          sectionStart: 1 / 3,
+          sectionLength: 1 / 3,
+          isEliminated: false,
+          eliminationOrder: null,
+        },
+        {
+          id: "3",
+          name: "P3",
+          health: 2,
+          color: "#c2",
+          sectionStart: 2 / 3,
+          sectionLength: 1 / 3,
+          isEliminated: false,
+          eliminationOrder: null,
+        },
+      ],
+    });
+
+    it("heals remaining active players by 1 when a player is eliminated", () => {
+      const nextState = playerReducer(
+        buildState(),
+        decrementPlayerHealth({
+          playerId: "2",
+          healOnElimination: true,
+          maxHealth: 3,
+        }),
+      );
+
+      expect(nextState.players.find((p) => p.id === "1")?.health).toBe(3);
+      expect(nextState.players.find((p) => p.id === "3")?.health).toBe(3);
+
+      // The just-eliminated player does not heal
+      const eliminated = nextState.players.find((p) => p.id === "2");
+      expect(eliminated?.health).toBe(0);
+      expect(eliminated?.isEliminated).toBe(true);
+    });
+
+    it("does not heal a player above the max health", () => {
+      const previousState = buildState();
+      previousState.players[0].health = 3; // Already at max
+
+      const nextState = playerReducer(
+        previousState,
+        decrementPlayerHealth({
+          playerId: "2",
+          healOnElimination: true,
+          maxHealth: 3,
+        }),
+      );
+
+      expect(nextState.players.find((p) => p.id === "1")?.health).toBe(3);
+      expect(nextState.players.find((p) => p.id === "3")?.health).toBe(3);
+    });
+
+    it("does not heal anyone when the option is not enabled", () => {
+      const nextState = playerReducer(
+        buildState(),
+        decrementPlayerHealth({ playerId: "2", maxHealth: 3 }),
+      );
+
+      expect(nextState.players.find((p) => p.id === "1")?.health).toBe(2);
+      expect(nextState.players.find((p) => p.id === "3")?.health).toBe(2);
+      expect(nextState.players.find((p) => p.id === "2")?.health).toBe(0);
+    });
+
+    it("does not heal when the hit does not eliminate anyone", () => {
+      const nextState = playerReducer(
+        buildState(),
+        decrementPlayerHealth({
+          playerId: "1", // Drops 2 -> 1, no elimination
+          healOnElimination: true,
+          maxHealth: 3,
+        }),
+      );
+
+      expect(nextState.players.find((p) => p.id === "1")?.health).toBe(1);
+      expect(nextState.players.find((p) => p.id === "2")?.health).toBe(1);
+      expect(nextState.players.find((p) => p.id === "3")?.health).toBe(2);
+    });
+
+    it("still redistributes border space while healing", () => {
+      const nextState = playerReducer(
+        buildState(),
+        decrementPlayerHealth({
+          playerId: "2",
+          healOnElimination: true,
+          maxHealth: 3,
+        }),
+      );
+
+      // Adjacent mode: the eliminated third is split between the two neighbours
+      const expectedLength = 1 / 3 + 1 / 3 / 2;
+      expect(
+        nextState.players.find((p) => p.id === "1")?.sectionLength,
+      ).toBeCloseTo(expectedLength);
+      expect(
+        nextState.players.find((p) => p.id === "3")?.sectionLength,
+      ).toBeCloseTo(expectedLength);
+      expect(
+        nextState.players.find((p) => p.id === "2")?.sectionLength,
+      ).toBe(0);
+    });
+  });
 });

@@ -119,7 +119,12 @@ export const playerSlice = createSlice({
       state,
       action: PayloadAction<DecrementPlayerHealthPayload>, // Use the new payload type
     ) => {
-      const { playerId, mode = "adjacent" } = action.payload; // Destructure payload, default mode to adjacent
+      const {
+        playerId,
+        mode = "adjacent", // Destructure payload, default mode to adjacent
+        healOnElimination = false,
+        maxHealth,
+      } = action.payload;
       const playerIndex = state.players.findIndex((p) => p.id === playerId);
       if (playerIndex === -1) return;
 
@@ -139,6 +144,17 @@ export const playerSlice = createSlice({
           const numActivePlayers = activePlayers.length;
 
           if (numActivePlayers > 0) {
+            // --- Heal Survivors (optional) --- START ---
+            // activePlayers excludes the player eliminated above, so they never heal.
+            if (healOnElimination) {
+              activePlayers.forEach((activePlayer) => {
+                const healed = activePlayer.health + 1;
+                activePlayer.health =
+                  maxHealth !== undefined ? Math.min(healed, maxHealth) : healed;
+              });
+            }
+            // --- Heal Survivors (optional) --- END ---
+
             // --- Distribute Length based on mode ---
             if (mode === "equal") {
               // EQUAL DISTRIBUTION

@@ -26,6 +26,7 @@ describe("NameInput", () => {
           logoSpeed: 5,
           customLogo: null,
           redistributionMode: "adjacent" as RedistributionMode,
+          healOnElimination: false,
         },
         players: {
           players: [],

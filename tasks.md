@@ -103,6 +103,11 @@
         - [x] Add UI control in `ControlPanel` to select redistribution mode (Low) # New Task
         - [x] Modify elimination logic in `playerSlice` to handle equal redistribution (Medium) # New Task
         - [x] Update relevant tests for redistribution logic (Medium) # New Task
+      - [x] Add option to heal remaining players by 1 HP on elimination (Medium) # New Task
+        - [x] Add `healOnElimination` setting to `settingsSlice` (Low) # New Task
+        - [x] Add UI toggle in `ControlPanel` for heal on elimination (Low) # New Task
+        - [x] Heal active players in `playerSlice` elimination logic, capped at max health (Medium) # New Task
+        - [x] Update relevant tests for heal on elimination (Medium) # New Task
       - [x] Update the player list/state.
     - [x] Check for win conditions (e.g., only one player remaining). # Task completed
       - [x] Dispatch `finishGame` action when only one player remains. # Task completed

@@ -28,6 +28,8 @@ export interface UpdatePlayerNamePayload {
 export interface DecrementPlayerHealthPayload {
   playerId: string;
   mode?: RedistributionMode; // Optional mode, defaults to 'adjacent' if not provided
+  healOnElimination?: boolean; // Heal the surviving players when this hit eliminates someone
+  maxHealth?: number; // Cap for healing; comes from settings.playerHealth
 }
 
 export interface SetPlayerBorderSegmentsPayload {
